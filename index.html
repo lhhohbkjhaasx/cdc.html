@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>中国流感监测报告 · 可视化看板</title>
-<script src="https://cdn.staticfile.org/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#eef3fa; --card:rgba(255,255,255,.72); --ink:#14213d; --muted:#68758e;
@@ -126,6 +126,9 @@
   .kpi::before{content:"";position:absolute;left:16px;right:16px;top:0;height:3px;
   border-radius:0 0 4px 4px;
   background:linear-gradient(90deg,#7dd3fc 0%,#5eead4 100%);}
+  .kpi.pink::after{background:var(--pink);}
+  .kpi.amber::after{background:var(--amber);}
+  .kpi.teal::after{background:var(--teal);}
   .kpi-label{font-size:12.5px;color:var(--muted);letter-spacing:.4px;}
   .kpi-value{font-size:27px;font-weight:800;letter-spacing:.5px;margin:4px 0 2px;font-variant-numeric:tabular-nums;}
   .kpi-foot{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
@@ -135,7 +138,7 @@
   .summary-list li::before{content:"";position:absolute;left:6px;top:10px;width:7px;height:7px;
     border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand-2));
     box-shadow:0 0 0 4px rgba(59,143,243,.15);}
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-wrap{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;}
   thead th{background:rgba(244,248,255,.85);color:#41527a;font-weight:600;text-align:center;
     padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
@@ -174,101 +177,17 @@
   }
   footer{padding:26px 0 44px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.9;}
   @media (max-width:900px){
-    .container{padding:0 14px;}
-    .hero{padding:22px 0 50px; border-radius:0 0 22px 22px;}
-    .hero-inner{gap:12px;}
-    .eyebrow{font-size:11px; letter-spacing:1px; margin-bottom:6px;}
-    .hero h1{font-size:22px; letter-spacing:1px;}
-    .hero-sub{font-size:11.5px; margin-top:4px; letter-spacing:.3px;}
-    .hero-meta{text-align:left; align-items:flex-start; gap:6px;}
-    .issue-badge{font-size:11px; padding:2px 10px; letter-spacing:.5px;}
-    .week-badge{font-size:19px; letter-spacing:1px;}
-    .period-badge{font-size:12px;}
-    .toolbar{top:6px; margin-top:-26px; margin-bottom:8px;}
-    .toolbar-inner{padding:8px 10px; gap:8px; border-radius:14px;}
-    .selector{width:100%; gap:6px;}
-    .nav-btn{flex:0 0 auto; padding:8px 10px; font-size:12.5px; border-radius:9px;}
-    #weekSelect{flex:1 1 auto; min-width:0; max-width:none; font-size:12.5px; padding:8px; border-radius:9px;}
-    .range-wrap{width:100%; gap:8px; justify-content:space-between; flex-wrap:wrap;}
-    .range-label{font-size:11.5px;}
-    .range-group{padding:2px; border-radius:10px;}
-    .range-btn{padding:6px 10px; font-size:11.5px; border-radius:8px;}
-    main{padding:10px 0 40px;}
-    .section{margin-bottom:20px;}
-    .section-title{font-size:15.5px; margin-bottom:10px; gap:7px;}
-    .section-title .dot{width:5px; height:16px; border-radius:2px;}
-    .card{padding:13px 14px; border-radius:14px;}
-    .card-head{margin-bottom:10px; gap:8px;}
-    .card-head h3{font-size:13.5px;}
-    .tag{font-size:11px; padding:2px 8px;}
-    .grid-2, .grid-2-even, .grid-3{grid-template-columns:1fr; gap:12px;}
-    .kpi-grid{grid-template-columns:1fr 1fr; gap:10px;}
-    .kpi{padding:11px 12px; border-radius:13px;}
-   .kpi::before{left:12px;right:12px;height:2.5px;}
-    .kpi-label{font-size:11.5px;}
-    .kpi-value{font-size:20px; margin:3px 0 2px; letter-spacing:.2px;}
-    .kpi-foot{font-size:10.5px; gap:4px;}
-    .kpi:hover{transform:none;}
-    .summary-list{gap:9px;}
-    .summary-list li{font-size:13px; padding-left:22px; line-height:1.7;}
-    .summary-list li::before{left:4px; top:8px; width:6px; height:6px; box-shadow:0 0 0 3px rgba(59,143,243,.15);}
-    .chart-wrap{height:230px;}
-    .chart-wrap.sm{height:200px;}
-    .chart-wrap.lg{height:250px;}
-    .legend-inline{font-size:11.5px; gap:12px; margin-top:8px;}
-    .chip{width:9px; height:9px;}
-    table{font-size:12px;}
-    thead th{padding:8px 6px; font-size:11.5px;}
-    tbody td{padding:8px 6px;}
-    td.strong{font-size:12px;}
-    .sub{font-size:10.5px;}
-    .stat-row{gap:10px;}
-    .stat{flex:1 1 calc(50% - 5px); min-width:0;}
-    .stat .num{font-size:17px;}
-    .stat .lbl{font-size:11px;}
-    .kv{padding:8px 0; font-size:12.5px; gap:10px; flex-wrap:wrap;}
-    .kv .k{font-size:12px;}
-    .kv .v{font-size:12.5px; max-width:62%; word-break:break-word;}
-    .kv .sub{font-size:10.5px;}
-    .note-box{padding:10px 12px; font-size:12.5px; line-height:1.7;
-      border-radius:0 10px 10px 0; border-left-width:3px;}
-    .hint{font-size:11.5px; margin-top:8px; line-height:1.65;}
-    .badge-row{gap:6px; margin-top:8px;}
-    .badge{font-size:11px; padding:4px 9px;}
-    footer{padding:20px 0 30px; font-size:11.5px; line-height:1.8;}
-    .blob{filter:blur(50px); opacity:.4;}
-    .blob.b1{width:280px; height:280px;}
-    .blob.b2{width:320px; height:320px; bottom:-120px; right:-100px;}
-    .blob.b3{width:240px; height:240px;}
-  }
-  @media (max-width: 380px){
-    .container{padding:0 10px;}
-    .hero{padding:18px 0 46px; border-radius:0 0 18px 18px;}
-    .hero h1{font-size:18px; letter-spacing:.5px;}
-    .hero-sub{font-size:11px;}
-    .eyebrow{font-size:10px;}
-    .week-badge{font-size:16px;}
-    .period-badge{font-size:11px;}
-    .issue-badge{font-size:10px; padding:2px 8px;}
-    .toolbar-inner{padding:7px 8px; gap:6px;}
-    .nav-btn{padding:7px 8px; font-size:11.5px;}
-    #weekSelect{font-size:11.5px; padding:7px 6px;}
-    .range-btn{padding:5px 7px; font-size:11px;}
-    .range-label{font-size:11px;}
-    .range-wrap{gap:6px;}
-    .kpi-grid{gap:8px;}
-    .kpi{padding:10px 10px; border-radius:12px;}
-    .kpi-value{font-size:18px;}
-    .kpi-foot{font-size:10px;}
-    .card{padding:11px 12px; border-radius:12px;}
-    .card-head h3{font-size:13px;}
-    .chart-wrap{height:210px;}
-    .chart-wrap.sm{height:180px;}
-    .chart-wrap.lg{height:230px;}
-    .section-title{font-size:14.5px;}
-    .summary-list li{font-size:12.5px; padding-left:20px;}
-    .kv{font-size:12px;}
-    .kv .v{font-size:12px; max-width:65%;}
+    .grid-2,.grid-2-even,.grid-3{grid-template-columns:1fr;}
+    .hero h1{font-size:24px;}
+    .hero{padding-bottom:56px;}
+    .hero-meta{text-align:left;align-items:flex-start;}
+    .week-badge{font-size:21px;}
+    .toolbar{top:8px;margin-top:-30px;}
+    .toolbar-inner{padding:9px 12px;gap:10px;}
+    select{min-width:150px;max-width:180px;font-size:13px;}
+    .range-btn{padding:5px 9px;font-size:12px;}
+    .chart-wrap{height:260px;} .chart-wrap.lg{height:280px;}
+    .blob{filter:blur(60px);}
   }
 </style>
 </head>
@@ -619,7 +538,8 @@ const WEEKS = [
     human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
     avian:{period:"2026年5月24 — 30日",events:20,note:"WOAH 共通报20起。"},
     others:{ global:{asOf:"数据截至2026年5月17日",text:"全球阳性率低，B型检出占主导。"}, usa:{week:"第20周",asOf:"数据截至2026年5月23日",items:[{k:"ILI 就诊比例",v:"1.7%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"32,783 份",sub:"阳性 548 份（1.7%）"},{k:"A型 / B型 占比",v:"14.6% / 85.4%",sub:"A型 80 · B型 468"},{k:"公共卫生实验室",v:"44 / 285 阳性",sub:"A型 14 · B型 30"},{k:"流感死亡占比",v:"0.1%",sub:"占总死亡病例"}]}, hk:{week:"第21周",asOf:"2026年5月17 — 23日",items:[{k:"普通科诊所 ILI",v:"7.7%",sub:"上周 7.3%"},{k:"私家医生 ILI",v:"44.1%",sub:"上周 28.5%"},{k:"呼吸道样本",v:"9,102 份",sub:"阳性 292 份（3.21%）"},{k:"阳性分型",v:"A(H3N2) 48%",sub:"A(H1N1)pdm09 8% · B型 44%"},{k:"流感入院率",v:"0.15",sub:"基线 0.27"}]}, tw:{week:"第20周",asOf:"2026年5月17 — 23日",items:[{k:"社区优势毒株",v:"B型为主",sub:"其次 A(H3N2)"},{k:"疫情趋势",v:"呈缓降趋势",sub:"需持续留意"},{k:"本流感季重症",v:"667 例",sub:"其中 134 例死亡"}]} }
-  },  { id:"2026W23", weekNo:23, label:"2026年第23周", issue:"总第912期", period:"2026年6月1日 — 6月7日", published:"2026年6月10日",
+  },
+  { id:"2026W23", weekNo:23, label:"2026年第23周", issue:"总第912期", period:"2026年6月1日 — 6月7日", published:"2026年6月10日",
     summary:["南方省份阳性率略有上升、北方省份下降，以B型为主。全国共报告12起暴发疫情。","2026-2027流感季抗原性参考株已更新：A(H1N1)pdm09 → A/Missouri/11/2025；A(H3N2) → A/Darwin/1454/2025（鸡胚株）、A/Darwin/1415/2025（细胞株）；B(Victoria) → B/Tokyo/EIS13-175/2025。"],
     ili:{ south:{value:5.2,prev:4.8,ref:{y2023:6.1,y2024:5.4,y2025:4.5}}, north:{value:3.5,prev:3.4,ref:{y2023:3.8,y2024:3.7,y2025:3.1}} },
     iliNote:"南方ILI%高于前一周（4.8%），低于2023和2024年同期（6.1%、5.4%），高于2025年同期（4.5%）；北方ILI%高于前一周（3.4%），低于2023和2024年同期（3.8%、3.7%），高于2025年同期（3.1%）。",
@@ -789,25 +709,24 @@ const WEEKS = [
     outbreaks:{ week:34, weekDetail:"12起A(H3N2)、2起A型（亚型未显示）、10起B(Victoria)、1起B型（系未显示）、3起混合型、2起流感阴性、4起暂未获得病原检测结果。", specimens:"南方187份中7份A(H1N1)pdm09、84份A(H3N2)、96份B(Victoria)；北方未收检到暴发疫情标本。", cumulativePeriod:"2026年第14周 — 2026年第37周", total:301, south:212, southPrevYear:23, north:89, northPrevYear:27, regions:[{name:"西南地区",value:108},{name:"华东地区",value:70},{name:"华南地区",value:41},{name:"西北地区",value:31},{name:"东北地区",value:21},{name:"华北地区",value:18},{name:"华中地区",value:12}] },
     human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
     avian:{period:"2026年9月6 — 12日",events:18,note:"WOAH 共通报18起，涉及智利、法国、拉脱维亚、新西兰、挪威、秘鲁、波兰、西班牙、瑞典、英国、美国、乌拉圭等。"},
-    others:{ global:{asOf:"数据截至2026年8月30日",text:"第35周，全球流感阳性率低于10%，A型病毒检出占主导。"}, usa:{week:"第35周",asOf:"数据截至2026年9月5日",items:[{k:"ILI 就诊比例",v:"1.5%",sub:"基线 3.1%"},{k:"临床实验室
-      检测",v:"26,520 份",sub:"阳性 348 份（1.3%）"},{k:"A型 / B型 占比",v:"93.7% / 6.3%",sub:"A型 326 · B型 22"},{k:"公共卫生实验室",v:"48 / 334 阳性",sub:"A型 45 · B型 3"},{k:"流感死亡占比",v:"0.06%",sub:"占总死亡病例"}]}, hk:{week:"第36周",asOf:"2026年8月30日 — 9月5日",items:[{k:"普通科诊所 ILI",v:"17.2%",sub:"上周 17.5%"},{k:"私家医生 ILI",v:"47.8%",sub:"上周 40.5%"},{k:"呼吸道样本",v:"10,478 份",sub:"阳性 1,367 份（13.05%）"},{k:"阳性分型",v:"A(H1N1)pdm09 82%",sub:"A(H3N2) 14% · B型 4%"},{k:"流感入院率",v:"0.83",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
+    others:{ global:{asOf:"数据截至2026年8月30日",text:"第35周，全球流感阳性率低于10%，A型病毒检出占主导。"}, usa:{week:"第35周",asOf:"数据截至2026年9月5日",items:[{k:"ILI 就诊比例",v:"1.5%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"26,520 份",sub:"阳性 348 份（1.3%）"},{k:"A型 / B型 占比",v:"93.7% / 6.3%",sub:"A型 326 · B型 22"},{k:"公共卫生实验室",v:"48 / 334 阳性",sub:"A型 45 · B型 3"},{k:"流感死亡占比",v:"0.06%",sub:"占总死亡病例"}]}, hk:{week:"第36周",asOf:"2026年8月30日 — 9月5日",items:[{k:"普通科诊所 ILI",v:"17.2%",sub:"上周 17.5%"},{k:"私家医生 ILI",v:"47.8%",sub:"上周 40.5%"},{k:"呼吸道样本",v:"10,478 份",sub:"阳性 1,367 份（13.05%）"},{k:"阳性分型",v:"A(H1N1)pdm09 82%",sub:"A(H3N2) 14% · B型 4%"},{k:"流感入院率",v:"0.83",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
   },
-    { id:"2026W38", weekNo:38, label:"2026年第38周", issue:"总第927期", period:"2026年9月14日 — 9月20日", published:"2026年9月23日",
-    summary:[
-      "南方省份流感病毒检测阳性率略有下降、北方省份流感活动低，全国检出流感阳性样本中甲型流感病毒占比64.1%、乙型35.9%；甲型中 A(H1N1)pdm09 占比5.8%、A(H3N2) 占比94.2%，乙型均为B(Victoria)系。全国共报告47起流感样病例暴发疫情。",
-      "A(H1N1)pdm09 中95.8%（69/72）为 A/Missouri/11/2025；A(H3N2) 中83.2%（326/392）为 A/Darwin/1454/2025（鸡胚株）、89.3%（350/392）为 A/Darwin/1415/2025（细胞株）；B(Victoria) 中93.9%（587/625）为 B/Tokyo/EIS13-175/2025。",
-      "耐药性：所有A(H1N1)pdm09和B型毒株均对神经氨酸酶抑制剂敏感；A(H3N2) 中0.3%（1/344）敏感性降低。所有毒株均对聚合酶抑制剂敏感。"
-    ],
-    ili:{ south:{value:5.0,prev:5.1,ref:{y2023:5.5,y2024:4.1,y2025:3.8}}, north:{value:3.2,prev:3.1,ref:{y2023:3.2,y2024:3.6,y2025:3.0}} },
-    iliNote:"南方ILI%低于前一周（5.1%），低于2023年同期（5.5%），高于2024和2025年同期（4.1%、3.8%）；北方ILI%高于前一周（3.1%），与2023年同期持平（3.2%），低于2024年同期（3.6%），高于2025年同期（3.0%）。",
-    lab:{ south:{tested:11157,positive:2459,A:1574,H1N1:93,H3N2:1481,B:885,BVictoria:885}, north:{tested:3122,positive:67,A:44,H1N1:1,H3N2:43,B:23,BVictoria:23}, total:{tested:14279,positive:2526,A:1618,H1N1:94,H3N2:1524,B:908,BVictoria:908} },
-    antigen:{ period:"2026年3月30日 — 2026年9月20日", rows:[{subtype:"A(H1N1)pdm09",strain:"A/Missouri/11/2025",similar:69,similarRate:95.8,total:72},{subtype:"A(H3N2)",strain:"A/Darwin/1454/2025（鸡胚株）",similar:326,similarRate:83.2,total:392},{subtype:"A(H3N2)",strain:"A/Darwin/1415/2025（细胞株）",similar:350,similarRate:89.3,total:392},{subtype:"B(Victoria)",strain:"B/Tokyo/EIS13-175/2025",similar:587,similarRate:93.9,total:625}] },
-    resistance:{ period:"2026年3月30日 — 2026年9月20日", rows:[{name:"A(H1N1)pdm09 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"},{name:"A(H3N2) 对神经氨酸酶抑制剂",reduced:1,total:344,rate:"0.3%"},{name:"B型 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"}] },
-    outbreaks:{ week:47, weekDetail:"13起A(H3N2)、3起A(H1N1)pdm09、12起B(Victoria)、2起B型（系未显示）、7起混合型、7起流感阴性、3起暂未获得病原检测结果。", specimens:"南方206份中29份A(H1N1)pdm09、61份A(H3N2)、116份B(Victoria)；北方未收检到暴发疫情标本。", cumulativePeriod:"2026年第14周 — 2026年第38周", total:350, south:260, southPrevYear:33, north:90, northPrevYear:29, regions:[{name:"西南地区",value:124},{name:"华东地区",value:96},{name:"华南地区",value:47},{name:"西北地区",value:31},{name:"东北地区",value:21},{name:"华北地区",value:18},{name:"华中地区",value:13}] },
-    human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
-    avian:{period:"2026年9月13 — 19日",events:12,note:"WOAH 共通报12起，涉及阿根廷、保加利亚、加拿大、丹麦、匈牙利、新西兰、波兰、西班牙、英国、美国等。"},
-    others:{ global:{asOf:"数据截至2026年9月6日",text:"第36周，全球流感阳性率约为10%，A型病毒检出占主导。南半球：温带南美一些国家、热带南美和东非个别国家阳性率超过10%；大洋洲一个国家超过30%，并监测到活动小幅上升；温带南美一个国家活动小幅上升。北半球：中美洲和加勒比地区、西非、西欧、南欧、南亚、东南亚和东亚部分国家，以及热带南美、中东和东非个别国家阳性率超过10%；西非和南亚一些国家及东南亚一个国家超过30%；西亚、南亚和东南亚部分国家以及中美洲和加勒比地区、北欧、西非、东非和东亚个别国家监测到活动小幅上升。优势毒株：西非、东亚和大洋洲以 A(H3N2) 为优势毒株；东非、西亚、南亚和东南亚以 A(H1N1)pdm09 为主；温带南美以B型为主；中美洲和加勒比地区、热带南美A型与B型共同流行。"}, usa:{week:"第36周",asOf:"数据截至2026年9月12日",items:[{k:"ILI 就诊比例",v:"1.6%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"28,999 份",sub:"阳性 514 份（1.8%）"},{k:"A型 / B型 占比",v:"95.9% / 4.1%",sub:"A型 493 · B型 21"},{k:"公共卫生实验室",v:"64 / 371 阳性",sub:"A型 61（95.3%）· B型 3（4.7%）"},{k:"流感死亡占比",v:"0.04%",sub:"占总死亡病例"}]}, hk:{week:"第37周",asOf:"2026年9月6 — 12日",items:[{k:"普通科诊所 ILI",v:"17.8%",sub:"上周 17.2%（处于流感季节）"},{k:"私家医生 ILI",v:"49.8%",sub:"上周 47.8%"},{k:"呼吸道样本",v:"10,275 份",sub:"阳性 1,301 份（12.66%）"},{k:"阳性分型",v:"A(H1N1)pdm09 86%",sub:"A(H3N2) 9% · B型 5%"},{k:"流感入院率",v:"0.80",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
-  }
+  { id:"2026W38", weekNo:38, label:"2026年第38周", issue:"总第927期", period:"2026年9月14日 — 9月20日", published:"2026年9月23日",
+  summary:[
+    "南方省份流感病毒检测阳性率略有下降、北方省份流感活动低，全国检出流感阳性样本中甲型流感病毒占比64.1%、乙型35.9%；甲型中 A(H1N1)pdm09 占比5.8%、A(H3N2) 占比94.2%，乙型均为B(Victoria)系。全国共报告47起流感样病例暴发疫情。",
+    "A(H1N1)pdm09 中95.8%（69/72）为 A/Missouri/11/2025；A(H3N2) 中83.2%（326/392）为 A/Darwin/1454/2025（鸡胚株）、89.3%（350/392）为 A/Darwin/1415/2025（细胞株）；B(Victoria) 中93.9%（587/625）为 B/Tokyo/EIS13-175/2025。",
+    "耐药性：所有A(H1N1)pdm09和B型毒株均对神经氨酸酶抑制剂敏感；A(H3N2) 中0.3%（1/344）敏感性降低。所有毒株均对聚合酶抑制剂敏感。"
+  ],
+  ili:{ south:{value:5.0,prev:5.1,ref:{y2023:5.5,y2024:4.1,y2025:3.8}}, north:{value:3.2,prev:3.1,ref:{y2023:3.2,y2024:3.6,y2025:3.0}} },
+  iliNote:"南方ILI%低于前一周（5.1%），低于2023年同期（5.5%），高于2024和2025年同期（4.1%、3.8%）；北方ILI%高于前一周（3.1%），与2023年同期持平（3.2%），低于2024年同期（3.6%），高于2025年同期（3.0%）。",
+  lab:{ south:{tested:11157,positive:2459,A:1574,H1N1:93,H3N2:1481,B:885,BVictoria:885}, north:{tested:3122,positive:67,A:44,H1N1:1,H3N2:43,B:23,BVictoria:23}, total:{tested:14279,positive:2526,A:1618,H1N1:94,H3N2:1524,B:908,BVictoria:908} },
+  antigen:{ period:"2026年3月30日 — 2026年9月20日", rows:[{subtype:"A(H1N1)pdm09",strain:"A/Missouri/11/2025",similar:69,similarRate:95.8,total:72},{subtype:"A(H3N2)",strain:"A/Darwin/1454/2025（鸡胚株）",similar:326,similarRate:83.2,total:392},{subtype:"A(H3N2)",strain:"A/Darwin/1415/2025（细胞株）",similar:350,similarRate:89.3,total:392},{subtype:"B(Victoria)",strain:"B/Tokyo/EIS13-175/2025",similar:587,similarRate:93.9,total:625}] },
+  resistance:{ period:"2026年3月30日 — 2026年9月20日", rows:[{name:"A(H1N1)pdm09 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"},{name:"A(H3N2) 对神经氨酸酶抑制剂",reduced:1,total:344,rate:"0.3%"},{name:"B型 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"}] },
+  outbreaks:{ week:47, weekDetail:"13起A(H3N2)、3起A(H1N1)pdm09、12起B(Victoria)、2起B型（系未显示）、7起混合型、7起流感阴性、3起暂未获得病原检测结果。", specimens:"南方206份中29份A(H1N1)pdm09、61份A(H3N2)、116份B(Victoria)；北方未收检到暴发疫情标本。", cumulativePeriod:"2026年第14周 — 2026年第38周", total:350, south:260, southPrevYear:33, north:90, northPrevYear:29, regions:[{name:"西南地区",value:124},{name:"华东地区",value:96},{name:"华南地区",value:47},{name:"西北地区",value:31},{name:"东北地区",value:21},{name:"华北地区",value:18},{name:"华中地区",value:13}] },
+  human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
+  avian:{period:"2026年9月13 — 19日",events:12,note:"WOAH 共通报12起，涉及阿根廷、保加利亚、加拿大、丹麦、匈牙利、新西兰、波兰、西班牙、英国、美国等。"},
+  others:{ global:{asOf:"数据截至2026年9月6日",text:"第36周，全球流感阳性率约为10%，A型病毒检出占主导。南半球：温带南美一些国家、热带南美和东非个别国家阳性率超过10%；大洋洲一个国家超过30%，并监测到活动小幅上升；温带南美一个国家活动小幅上升。北半球：中美洲和加勒比地区、西非、西欧、南欧、南亚、东南亚和东亚部分国家，以及热带南美、中东和东非个别国家阳性率超过10%；西非和南亚一些国家及东南亚一个国家超过30%；西亚、南亚和东南亚部分国家以及中美洲和加勒比地区、北欧、西非、东非和东亚个别国家监测到活动小幅上升。优势毒株：西非、东亚和大洋洲以 A(H3N2) 为优势毒株；东非、西亚、南亚和东南亚以 A(H1N1)pdm09 为主；温带南美以B型为主；中美洲和加勒比地区、热带南美A型与B型共同流行。"}, usa:{week:"第36周",asOf:"数据截至2026年9月12日",items:[{k:"ILI 就诊比例",v:"1.6%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"28,999 份",sub:"阳性 514 份（1.8%）"},{k:"A型 / B型 占比",v:"95.9% / 4.1%",sub:"A型 493 · B型 21"},{k:"公共卫生实验室",v:"64 / 371 阳性",sub:"A型 61（95.3%）· B型 3（4.7%）"},{k:"流感死亡占比",v:"0.04%",sub:"占总死亡病例"}]}, hk:{week:"第37周",asOf:"2026年9月6 — 12日",items:[{k:"普通科诊所 ILI",v:"17.8%",sub:"上周 17.2%（处于流感季节）"},{k:"私家医生 ILI",v:"49.8%",sub:"上周 47.8%"},{k:"呼吸道样本",v:"10,275 份",sub:"阳性 1,301 份（12.66%）"},{k:"阳性分型",v:"A(H1N1)pdm09 86%",sub:"A(H3N2) 9% · B型 5%"},{k:"流感入院率",v:"0.80",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
+}
 ];
 /* ======================= 数据区结束 ======================= */
 
@@ -879,9 +798,9 @@ function renderKPI(d) {
 
   const cards = [
     { cls:'', label:'南方省份 ILI%', value:s.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(s.value, s.prev)}　前一周 ${s.prev.toFixed(1)}%` },
-    { cls:'', label:'北方省份 ILI%', value:n.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(n.value, n.prev)}　前一周 ${n.prev.toFixed(1)}%` },
-    { cls:'', label:'南方流感病毒阳性率', value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate) },
-    { cls:'', label:'北方流感病毒阳性率', value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate) },
+    { cls:'amber', label:'北方省份 ILI%', value:n.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(n.value, n.prev)}　前一周 ${n.prev.toFixed(1)}%` },
+    { cls:'pink', label:'南方流感病毒阳性率', value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate) },
+    { cls:'teal', label:'北方流感病毒阳性率', value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate) },
     { cls:'', label:'本周暴发疫情', value:fmt(d.outbreaks.week)+' 起', foot:`本流行季累计 ${fmt(d.outbreaks.total)} 起` }
   ];
   $('kpiGrid').innerHTML = cards.map(c => `
@@ -1039,7 +958,9 @@ function renderVirology(d) {
 
   $('resBadges').innerHTML = `
     <span class="badge ok">B型：全部对神经氨酸酶抑制剂敏感</span>
-    <span class="badge ok">全部毒株对聚合酶抑制剂敏感</span>`;
+    <span class="badge ok">全部毒株对聚合酶抑制剂敏感</span>
+    <span class="badge warn">A(H1N1)pdm09：1.8% 敏感性降低</span>
+    <span class="badge warn">A(H3N2)：0.09% 敏感性降低</span>`;
 }
 
 function renderAnimal(d) {
