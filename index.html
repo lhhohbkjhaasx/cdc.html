@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>中国流感监测报告 · 可视化看板</title>
-<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#eef3fa; --card:rgba(255,255,255,.72); --ink:#14213d; --muted:#68758e;
@@ -292,6 +292,30 @@
     .guide-term{font-size:13.5px;}
     .guide-desc{font-size:12.5px;}
   }
+  .current-week{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(11,87,208,.08);
+    border:1px solid rgba(11,87,208,.2);
+    color:var(--brand);
+    font-size:13.5px;font-weight:600;
+    padding:6px 14px;border-radius:999px;
+    margin-bottom:12px;
+  }
+  .current-week strong{font-size:15px;letter-spacing:.3px;font-weight:800;}
+  .cw-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--brand);
+    box-shadow:0 0 0 4px rgba(11,87,208,.18);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 4px rgba(11,87,208,.18);}
+    50%{box-shadow:0 0 0 7px rgba(11,87,208,.08);}
+  }
+  @media (max-width:900px){
+    .current-week{font-size:12px;padding:5px 11px;margin-bottom:9px;}
+    .current-week strong{font-size:13px;}
+  }
 </style>
 </head>
 <body>
@@ -387,6 +411,7 @@
           <h3>南北方哨点医院 ILI% 周趋势</h3>
           <span class="tag" id="iliTag">—</span>
         </div>
+        <div class="current-week"><span class="cw-dot"></span>当前选中：<strong id="iliCurrentWeek">—</strong></div>
         <div class="chart-wrap"><canvas id="chartILI"></canvas></div>
         <div class="legend-inline">
           <span><i class="chip" style="background:#0b57d0"></i>南方省份</span>
@@ -409,6 +434,7 @@
         <h3>流感病毒检测阳性率周趋势（南方 vs 北方）</h3>
         <span class="tag" id="posTag">—</span>
       </div>
+      <div class="current-week"><span class="cw-dot"></span>当前选中：<strong id="posCurrentWeek">—</strong></div>
       <div class="chart-wrap lg"><canvas id="chartPositivity"></canvas></div>
       <div class="legend-inline">
         <span><i class="chip" style="background:#0b57d0"></i>南方省份阳性率</span>
@@ -1129,9 +1155,14 @@ function renderOthers(d) {
 
 function renderCharts() {
   const idxs = getVisibleIndexes();
+  const curPos = idxs.indexOf(state.index);
   const labels = idxs.map(i => '第' + WEEKS[i].weekNo + '周');
   const south = idxs.map(i => WEEKS[i].ili.south.value);
   const north = idxs.map(i => WEEKS[i].ili.north.value);
+
+  const mkPointRadius = () => idxs.map((_, i) => i === curPos ? 8 : 4);
+  const mkPointBg = (c) => idxs.map((_, i) => i === curPos ? c : '#fff');
+  const mkPointBorder = () => idxs.map((_, i) => i === curPos ? 3.5 : 2.4);
 
   killChart('ili');
   charts.ili = new Chart($('chartILI'), {
@@ -1140,11 +1171,19 @@ function renderCharts() {
       labels,
       datasets: [
         { label:'南方省份 ILI%', data:south, borderColor:'#0b57d0', backgroundColor:'rgba(11,87,208,.10)',
-          borderWidth:2.6, tension:.35, fill:true, pointRadius:4, pointBackgroundColor:'#fff',
-          pointBorderColor:'#0b57d0', pointBorderWidth:2.4, pointHoverRadius:6 },
+          borderWidth:2.6, tension:.35, fill:true,
+          pointRadius: mkPointRadius(),
+          pointBackgroundColor: mkPointBg('#0b57d0'),
+          pointBorderColor:'#0b57d0',
+          pointBorderWidth: mkPointBorder(),
+          pointHoverRadius:8 },
         { label:'北方省份 ILI%', data:north, borderColor:'#f2a03d', backgroundColor:'rgba(242,160,61,.10)',
-          borderWidth:2.6, tension:.35, fill:true, pointRadius:4, pointBackgroundColor:'#fff',
-          pointBorderColor:'#f2a03d', pointBorderWidth:2.4, pointHoverRadius:6 }
+          borderWidth:2.6, tension:.35, fill:true,
+          pointRadius: mkPointRadius(),
+          pointBackgroundColor: mkPointBg('#f2a03d'),
+          pointBorderColor:'#f2a03d',
+          pointBorderWidth: mkPointBorder(),
+          pointHoverRadius:8 }
       ]
     },
     options: {
@@ -1173,11 +1212,19 @@ function renderCharts() {
       labels,
       datasets: [
         { label:'南方省份阳性率', data:sPos, borderColor:'#0b57d0', backgroundColor:'rgba(11,87,208,.10)',
-          borderWidth:2.8, tension:.35, fill:true, pointRadius:5, pointBackgroundColor:'#fff',
-          pointBorderColor:'#0b57d0', pointBorderWidth:2.6, pointHoverRadius:7 },
+          borderWidth:2.8, tension:.35, fill:true,
+          pointRadius: mkPointRadius(),
+          pointBackgroundColor: mkPointBg('#0b57d0'),
+          pointBorderColor:'#0b57d0',
+          pointBorderWidth: mkPointBorder(),
+          pointHoverRadius:9 },
         { label:'北方省份阳性率', data:nPos, borderColor:'#f2a03d', backgroundColor:'rgba(242,160,61,.10)',
-          borderWidth:2.8, tension:.35, fill:true, pointRadius:5, pointBackgroundColor:'#fff',
-          pointBorderColor:'#f2a03d', pointBorderWidth:2.6, pointHoverRadius:7 }
+          borderWidth:2.8, tension:.35, fill:true,
+          pointRadius: mkPointRadius(),
+          pointBackgroundColor: mkPointBg('#f2a03d'),
+          pointBorderColor:'#f2a03d',
+          pointBorderWidth: mkPointBorder(),
+          pointHoverRadius:9 }
       ]
     },
     options: {
@@ -1200,6 +1247,13 @@ function renderCharts() {
 function render() {
   const d = WEEKS[state.index];
   renderHeader(d);
+
+  // 安全更新"当前选中"标签：元素不存在也不会报错
+  const iliEl = $('iliCurrentWeek');
+  const posEl = $('posCurrentWeek');
+  if (iliEl) iliEl.textContent = d.label + '（' + d.issue + '）';
+  if (posEl) posEl.textContent = d.label + '（' + d.issue + '）';
+
   renderKPI(d);
   renderSummary(d);
   renderILI(d);
