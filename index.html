@@ -316,6 +316,49 @@
     .current-week{font-size:12px;padding:5px 11px;margin-bottom:9px;}
     .current-week strong{font-size:13px;}
   }
+  .term{
+    border-bottom:1px dashed rgba(11,87,208,.45);
+    cursor:help;
+    transition:.18s;
+  }
+  .term:hover{
+    border-bottom-color:var(--brand);
+    color:var(--brand);
+  }
+    #termTooltip{
+    position:fixed;z-index:9999;max-width:330px;
+    background:rgba(255,255,255,.88);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    color:#1c2b4a;
+    font-size:13px;line-height:1.75;
+    padding:13px 17px;border-radius:14px;
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 12px 32px rgba(20,50,100,.14), 0 2px 8px rgba(20,50,100,.06);
+    pointer-events:none;opacity:0;transform:translateY(6px);
+    transition:opacity .18s, transform .18s;
+  }
+  #termTooltip.show{opacity:1;transform:translateY(0);}
+  #termTooltip .tip-title{
+    font-size:13.5px;font-weight:800;color:var(--brand);
+    margin-bottom:6px;letter-spacing:.4px;
+    display:flex;align-items:center;gap:6px;
+  }
+  #termTooltip .tip-title::before{
+    content:"";width:5px;height:14px;border-radius:3px;
+    background:linear-gradient(180deg,var(--brand),var(--brand-2));
+  }
+  #termTooltip .tip-arrow{
+    position:absolute;width:10px;height:10px;
+    background:rgba(255,255,255,.88);
+    border:1px solid rgba(255,255,255,.9);
+    transform:rotate(45deg);border-radius:2px;
+  }
+  #termTooltip.above .tip-arrow{bottom:-5px;left:50%;margin-left:-5px;}
+  #termTooltip.below .tip-arrow{top:-5px;left:50%;margin-left:-5px;}
+  @media (max-width:900px){
+    #termTooltip{max-width:260px;font-size:12px;padding:10px 13px;}
+  }
 </style>
 </head>
 <body>
@@ -361,38 +404,7 @@
 
 <main class="container">
 
-  <section class="section">
-    <h2 class="section-title"><span class="dot"></span>先看这里：一分钟读懂这份报告</h2>
-    <div class="card">
-      <div class="guide-grid">
-        <div class="guide-item">
-          <div class="guide-term">ILI%（流感样病例百分比）</div>
-          <div class="guide-desc">去医院看病的人里，有多少是因为"发烧 + 咳嗽 / 嗓子疼"这类像流感的症状。这个数字越高，说明流感正在流行。</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-term">流感病毒阳性率</div>
-          <div class="guide-desc">送检的样本里，真的查出流感病毒的比例。它比 ILI% 更准，是判断流感是否流行的核心指标。</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-term">A型 / B型</div>
-          <div class="guide-desc">流感病毒的两个大家族。A型（甲型）变化快、容易引发大流行；B型（乙型）相对温和。两者每年都在人群中共同流行。</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-term">H1N1 / H3N2</div>
-          <div class="guide-desc">A型流感下面的具体"型号"。疫苗每年会根据当年流行的型号调整配方。</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-term">暴发疫情</div>
-          <div class="guide-desc">一周内，同一个学校、养老院等单位出现 10 例以上流感样病例，就统计为一起"暴发"。它反映聚集性传播的情况。</div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-term">抗原性 / 耐药性分析</div>
-          <div class="guide-desc">抗原性：流行的病毒和疫苗株像不像，越像疫苗越有效。耐药性：病毒对药物敏不敏感，越敏感药越管用。</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
+ 
   <section class="section">
     <h2 class="section-title"><span class="dot"></span>核心指标</h2>
     <div class="kpi-grid" id="kpiGrid"></div>
@@ -484,11 +496,11 @@
     <h2 class="section-title"><span class="dot"></span>四、病毒学特征（抗原性与耐药性）</h2>
     <div class="grid-2-even">
       <div class="card">
-        <div class="card-head"><h3>抗原性分析</h3><span class="tag" id="antigenTag">—</span></div>
+        <div class="card-head"><h3><span class="term" data-term="抗原性分析">抗原性分析</span></h3><span class="tag" id="antigenTag">—</span></div>
         <div class="table-wrap"><table id="antigenTable"></table></div>
       </div>
       <div class="card">
-        <div class="card-head"><h3>耐药性分析</h3><span class="tag" id="resTag">—</span></div>
+        <div class="card-head"><h3><span class="term" data-term="耐药性分析">耐药性分析</span></h3><span class="tag" id="resTag">—</span></div>
         <div class="kv-list" id="resList"></div>
         <div class="badge-row" id="resBadges"></div>
       </div>
@@ -956,12 +968,12 @@ function renderKPI(d) {
     ? `阳性 ${fmt(ls.positive)} / 检测 ${fmt(ls.tested)}`
     : `较前一周 ${deltaHtml(cur, pre)}　前一周 ${pre.toFixed(1)}%`;
 
-  const cards = [
-    { cls:'', label:'南方省份 ILI%', value:s.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(s.value, s.prev)}　前一周 ${s.prev.toFixed(1)}%` },
-    { cls:'', label:'北方省份 ILI%', value:n.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(n.value, n.prev)}　前一周 ${n.prev.toFixed(1)}%` },
-    { cls:'', label:'南方流感病毒阳性率', value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate) },
-    { cls:'', label:'北方流感病毒阳性率', value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate) },
-    { cls:'', label:'本周暴发疫情', value:fmt(d.outbreaks.week)+' 起', foot:`本流行季累计 ${fmt(d.outbreaks.total)} 起` }
+    const cards = [
+    { cls:'', label:'南方省份 <span class="term" data-term="ILI%">ILI%</span>', value:s.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(s.value, s.prev)}　前一周 ${s.prev.toFixed(1)}%` },
+    { cls:'', label:'北方省份 <span class="term" data-term="ILI%">ILI%</span>', value:n.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(n.value, n.prev)}　前一周 ${n.prev.toFixed(1)}%` },
+    { cls:'', label:'南方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>', value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate) },
+    { cls:'', label:'北方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>', value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate) },
+    { cls:'', label:'本周<span class="term" data-term="暴发疫情">暴发疫情</span>', value:fmt(d.outbreaks.week)+' 起', foot:`本流行季累计 ${fmt(d.outbreaks.total)} 起` }
   ];
   $('kpiGrid').innerHTML = cards.map(c => `
     <div class="kpi ${c.cls}">
@@ -1022,8 +1034,7 @@ function renderLab(d) {
   const labels = ['A(H1N1)pdm09', 'A(H3N2)', 'B(Victoria)'];
   const colors = ['#f2a03d', '#d6408f', '#2f7fd8'];
 
-  killChart('types');
-  charts.types = new Chart($('chartTypes'), {
+  mountChart('types', 'chartTypes', {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'rgba(255,255,255,.9)', borderWidth: 3, hoverOffset: 8 }] },
     options: {
@@ -1041,8 +1052,8 @@ function renderLab(d) {
   });
 
   const total = data.reduce((a, b) => a + b, 0);
-  $('typesLegend').innerHTML = labels.map((l, i) =>
-    `<span><i class="chip" style="background:${colors[i]}"></i>${l} ${fmt(data[i])} 份（${(data[i] / total * 100).toFixed(1)}%）</span>`
+    $('typesLegend').innerHTML = labels.map((l, i) =>
+    `<span><i class="chip" style="background:${colors[i]}"></i><span class="term" data-term="${l}">${l}</span> ${fmt(data[i])} 份（${(data[i] / total * 100).toFixed(1)}%）</span>`
   ).join('');
 }
 
@@ -1061,8 +1072,7 @@ function renderOutbreak(d) {
   $('obSpecimen').textContent = o.specimens;
 
   const sorted = [...o.regions].sort((a, b) => a.value - b.value);
-  killChart('region');
-  charts.region = new Chart($('chartRegion'), {
+  mountChart('region', 'chartRegion', {
     type: 'bar',
     data: {
       labels: sorted.map(r => r.name),
@@ -1153,6 +1163,65 @@ function renderOthers(d) {
   fill('twList', 'twTag', o.tw);
 }
 
+/* ============================================================
+ *  图表：先进入视口的播放入场动画，之后更新仅刷新数据不重播
+ *  （mountChart 提到模块顶层，renderLab / renderOutbreak /
+ *    renderCharts 共享，避免作用域丢失）
+ * ============================================================ */
+const entrancePlayed = new Set();
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function mountChart(key, canvasId, config){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const wrap = canvas.closest('.chart-wrap');
+
+  const build = (withEntrance) => {
+    killChart(key);
+    config.options = config.options || {};
+    if (withEntrance && !prefersReducedMotion){
+      config.options.animation = { duration: 1300, easing: 'easeOutQuart' };
+    } else {
+      config.options.animation = false;
+    }
+    charts[key] = new Chart(canvas, config);
+    if (withEntrance) entrancePlayed.add(key);
+  };
+
+  // 已经播过入场动画：直接无动画更新
+  if (entrancePlayed.has(key)){
+    build(false);
+    return;
+  }
+
+  // 没有 wrap 或动画被系统禁用：直接播
+  if (!wrap || prefersReducedMotion){
+    build(true);
+    return;
+  }
+
+  // 已经在视口里：立即播
+  const rect = wrap.getBoundingClientRect();
+  if (rect.top < window.innerHeight && rect.bottom > 0){
+    build(true);
+    return;
+  }
+
+  // 否则等滚动到视口再播
+  if (wrap._obs) wrap._obs.disconnect();
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        build(true);
+        obs.disconnect();
+        wrap._obs = null;
+      }
+    });
+  }, { threshold: 0.15 });
+  wrap._obs = obs;
+  obs.observe(wrap);
+}
+
 function renderCharts() {
   const idxs = getVisibleIndexes();
   const curPos = idxs.indexOf(state.index);
@@ -1164,8 +1233,8 @@ function renderCharts() {
   const mkPointBg = (c) => idxs.map((_, i) => i === curPos ? c : '#fff');
   const mkPointBorder = () => idxs.map((_, i) => i === curPos ? 3.5 : 2.4);
 
-  killChart('ili');
-  charts.ili = new Chart($('chartILI'), {
+  // ---- ILI 折线图 ----
+  mountChart('ili', 'chartILI', {
     type: 'line',
     data: {
       labels,
@@ -1202,11 +1271,11 @@ function renderCharts() {
     }
   });
 
+  // ---- 阳性率折线图 ----
   const sPos = idxs.map(i => rate(WEEKS[i].lab.south.positive, WEEKS[i].lab.south.tested));
   const nPos = idxs.map(i => rate(WEEKS[i].lab.north.positive, WEEKS[i].lab.north.tested));
 
-  killChart('positivity');
-  charts.positivity = new Chart($('chartPositivity'), {
+  mountChart('positivity', 'chartPositivity', {
     type: 'line',
     data: {
       labels,
@@ -1296,6 +1365,74 @@ function render() {
     });
   });
   render();
+})();
+/* ========== 术语悬停提示 ========== */
+const GLOSSARY = {
+  'ILI%': 'ILI% = 流感样病例百分比。去医院看病的人里，有多少是因为"发烧 + 咳嗽 / 嗓子疼"这类像流感的症状。这个数字越高，说明流感正在流行。',
+  '流感病毒阳性率': '送检的样本里，真的查出流感病毒的比例。它比 ILI% 更准，是判断流感是否流行的核心指标。',
+  '暴发疫情': '一周内，同一个学校、养老院等单位出现 10 例以上流感样病例，就统计为一起"暴发"。它反映聚集性传播的情况。',
+  'A(H1N1)pdm09': 'A型流感的一种亚型，2009 年引起全球大流行，至今仍在人群中季节性流行。',
+  'A(H3N2)': 'A型流感的一种亚型。变化快，容易引起较大规模的流行。',
+  'B(Victoria)': 'B型（乙型）流感的一个谱系。相对温和，与 A 型共同在人群中流行。',
+  '抗原性分析': '检测流行的病毒和疫苗株像不像。越像，说明疫苗保护效果越好。',
+  '耐药性分析': '检测病毒对药物敏不敏感。越敏感，说明抗病毒药越管用。'
+};
+
+(function initTooltip(){
+  const tip = document.createElement('div');
+  tip.id = 'termTooltip';
+  tip.innerHTML = '<div class="tip-title"></div><div class="tip-body"></div><div class="tip-arrow"></div>';
+  document.body.appendChild(tip);
+  const titleEl = tip.querySelector('.tip-title');
+  const bodyEl = tip.querySelector('.tip-body');
+  let currentEl = null;
+
+  function show(el){
+    const key = el.dataset.term;
+    const text = GLOSSARY[key];
+    if (!text) return;
+    currentEl = el;
+    titleEl.textContent = key;
+    bodyEl.textContent = text;
+    tip.classList.add('show');
+    position(el);
+  }
+  function hide(){
+    currentEl = null;
+    tip.classList.remove('show');
+  }
+  function position(el){
+    const r = el.getBoundingClientRect();
+    tip.classList.remove('above','below');
+    tip.style.visibility = 'hidden';
+    tip.style.top = '0px'; tip.style.left = '0px';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.visibility = '';
+    let top = r.top - th - 12, cls = 'above';
+    if (top < 10){ top = r.bottom + 12; cls = 'below'; }
+    let left = r.left + r.width/2 - tw/2;
+    if (left < 10) left = 10;
+    if (left + tw > window.innerWidth - 10) left = window.innerWidth - tw - 10;
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+    tip.classList.add(cls);
+  }
+
+  // 事件委托：动态渲染的元素也能自动生效
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-term]');
+    if (el && el !== currentEl) show(el);
+  });
+  document.addEventListener('mouseout', e => {
+    const el = e.target.closest('[data-term]');
+    if (el && el === currentEl){
+      const to = e.relatedTarget;
+      if (to && el.contains(to)) return;
+      hide();
+    }
+  });
+  document.addEventListener('scroll', () => { if (currentEl) position(currentEl); }, true);
+  window.addEventListener('resize', () => { if (currentEl) position(currentEl); });
 })();
 </script>
 </body>
