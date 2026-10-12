@@ -33,26 +33,83 @@
   .hero{
     position:relative;overflow:hidden;color:#fff;
     background:linear-gradient(120deg,#062a68 0%,#0b57d0 48%,#2f8ee6 100%);
-    border-radius:0 0 30px 30px; padding:34px 0 62px;
+    border-radius:0 0 30px 30px;
+    padding:0;
+    height:88vh;
+    display:flex;align-items:center;justify-content:center;
     box-shadow:0 12px 40px rgba(11,87,208,.28);
+    will-change:height;
   }
   .hero::before{
     content:"";position:absolute;width:420px;height:420px;right:-140px;top:-190px;
     background:radial-gradient(circle,rgba(255,255,255,.24),transparent 68%);
     border-radius:50%;filter:blur(20px);
+    pointer-events:none;
   }
   .hero::after{
     content:"";position:absolute;width:300px;height:300px;left:-120px;bottom:-180px;
     background:radial-gradient(circle,rgba(120,220,255,.30),transparent 70%);
     border-radius:50%;filter:blur(20px);
+    pointer-events:none;
   }
-  .hero-inner{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:22px;
-    align-items:flex-end;justify-content:space-between;}
-  .eyebrow{font-size:13px;letter-spacing:1.5px;opacity:.82;margin-bottom:8px;}
-  .hero h1{font-size:32px;font-weight:800;letter-spacing:2px;line-height:1.25;}
-  .hero-sub{font-size:13px;opacity:.75;letter-spacing:.6px;margin-top:6px;}
-  .hero-meta{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
-  .issue-badge{
+  .hero-inner{
+    position:relative;z-index:2;
+    display:flex;flex-wrap:wrap;gap:22px;
+    align-items:center;justify-content:space-between;
+    width:100%;
+    padding:40px 0;
+  }
+   .eyebrow{
+    font-size:13px;letter-spacing:1.5px;opacity:.82;margin-bottom:12px;
+    max-height:60px;overflow:hidden;
+  }
+   .hero h1{
+    font-size:clamp(44px,6.2vw,84px);
+    font-weight:800;letter-spacing:2px;line-height:1.12;
+  }
+   .hero-sub{
+    font-size:14px;opacity:.78;letter-spacing:.6px;margin-top:8px;
+    max-height:40px;overflow:hidden;
+  }
+  .hero-meta{
+    text-align:right;display:flex;flex-direction:column;
+    align-items:flex-end;gap:10px;
+  }
+  .issue-badge, .week-badge, .period-badge{
+    transition:font-size .5s, padding .5s, letter-spacing .5s;
+  }
+
+  /* ===== 收起态：只改视觉样式，高度变化全部交给 JS 驱动 ===== */
+  body.hero-collapsed .hero{
+    height:72px;
+    border-radius:0 0 16px 16px;
+    box-shadow:0 4px 20px rgba(11,87,208,.20);
+  }
+  body.hero-collapsed .hero-inner{
+    padding:12px 0;
+    align-items:center;
+    gap:14px;
+  }
+  body.hero-collapsed .hero h1{
+    font-size:22px;
+    letter-spacing:.5px;
+  }
+  body.hero-collapsed .eyebrow,
+  body.hero-collapsed .hero-sub{
+    opacity:0;
+    max-height:0;
+    margin:0;
+  }
+  body.hero-collapsed .issue-badge{font-size:10px; padding:2px 10px; letter-spacing:.5px;}
+  body.hero-collapsed .week-badge{font-size:20px; letter-spacing:.5px;}
+  body.hero-collapsed .period-badge{font-size:11px;}
+  body.hero-collapsed .hero-meta{gap:4px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .hero, .hero-inner, .hero h1, .eyebrow, .hero-sub{
+      transition:none;
+    }
+  }  .issue-badge{
     display:inline-block;background:rgba(255,255,255,.16);
     border:1px solid rgba(255,255,255,.35);
     padding:3px 14px;border-radius:999px;font-size:12.5px;letter-spacing:1px;
@@ -175,7 +232,14 @@
   footer{padding:26px 0 44px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.9;}
   @media (max-width:900px){
     .container{padding:0 14px;}
-    .hero{padding:22px 0 50px; border-radius:0 0 22px 22px;}
+    .hero{height:auto; min-height:0; padding:22px 0 50px; border-radius:0 0 22px 22px;}
+.hero-inner{padding:0;}
+.hero h1{font-size:26px;}
+.eyebrow{font-size:11px; margin-bottom:6px;}
+.hero-sub{font-size:11.5px; margin-top:4px;}
+body.hero-collapsed .hero-inner{padding:10px 0;}
+body.hero-collapsed .hero h1{font-size:16px;}
+body.hero-collapsed .week-badge{font-size:15px;}
     .hero-inner{gap:12px;}
     .eyebrow{font-size:11px; letter-spacing:1px; margin-bottom:6px;}
     .hero h1{font-size:22px; letter-spacing:1px;}
@@ -359,6 +423,93 @@
   @media (max-width:900px){
     #termTooltip{max-width:260px;font-size:12px;padding:10px 13px;}
   }
+/* ============== 图片优先 + 丰富动效 ============== */
+
+/* 图表放大：让图成为页面主角 */
+.chart-wrap{height:400px;}
+.chart-wrap.sm{height:340px;}
+.chart-wrap.lg{height:500px;}
+
+@media (max-width:900px){
+  .chart-wrap{height:280px;}
+  .chart-wrap.sm{height:240px;}
+  .chart-wrap.lg{height:320px;}
+}
+
+/* 卡片/图表悬停时轻微上浮 + 发光 */
+.card, .kpi{
+  transition: transform .35s cubic-bezier(.22,1,.36,1),
+              box-shadow .35s ease;
+}
+.card:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 24px 52px rgba(20,50,100,.15),
+              0 4px 12px rgba(20,50,100,.06),
+              inset 0 1px 0 rgba(255,255,255,.9);
+}
+.kpi:hover{
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 24px 52px rgba(20,50,100,.16),
+              0 4px 12px rgba(20,50,100,.06);
+}
+
+/* 图表背后的柔光，进入视口后亮起 */
+.chart-wrap{ position:relative; }
+.chart-wrap::after{
+  content:"";
+  position:absolute;inset:-50px;border-radius:32px;
+  background:radial-gradient(circle at 50% 50%,
+              rgba(11,87,208,.08), transparent 65%);
+  opacity:0;transition:opacity .9s ease;
+  pointer-events:none;z-index:-1;
+}
+.section.in-view .chart-wrap::after{ opacity:1; }
+
+
+/* Hero 光斑跟随鼠标 */
+.hero::before{
+  transform:translate(var(--mx,-140px), var(--my,-190px));
+  transition:transform .9s cubic-bezier(.22,1,.36,1);
+}
+.hero::after{
+  transform:translate(calc(var(--mx,-120px) * -.6),
+                       calc(var(--my,-180px) * -.4));
+  transition:transform 1.3s cubic-bezier(.22,1,.36,1);
+}
+
+/* Section 分层入场 */
+.section.in-view .section-title{
+  animation:titleIn .8s cubic-bezier(.22,1,.36,1) both;
+}
+.section.in-view .card,
+.section.in-view .kpi{
+  animation:cardIn .8s cubic-bezier(.22,1,.36,1) both;
+}
+.section.in-view .card:nth-child(2){ animation-delay:.10s; }
+.section.in-view .card:nth-child(3){ animation-delay:.20s; }
+.section.in-view .kpi:nth-child(1){ animation-delay:.02s; }
+.section.in-view .kpi:nth-child(2){ animation-delay:.08s; }
+.section.in-view .kpi:nth-child(3){ animation-delay:.14s; }
+.section.in-view .kpi:nth-child(4){ animation-delay:.20s; }
+.section.in-view .kpi:nth-child(5){ animation-delay:.26s; }
+
+@keyframes titleIn{
+  from{opacity:0;transform:translateY(12px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(18px) scale(.985);}
+  to  {opacity:1;transform:translateY(0) scale(1);}
+}
+
+/* 尊重"减少动态效果" */
+@media (prefers-reduced-motion: reduce){
+  .card:hover,.kpi:hover{ transform:none; }
+  .section.in-view .section-title,
+  .section.in-view .card,
+  .section.in-view .kpi{ animation:none; }
+  .hero::before,.hero::after{ transition:none; }
+}
 </style>
 </head>
 <body>
@@ -898,6 +1049,22 @@ const WEEKS = [
     human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
     avian:{period:"2026年9月13 — 19日",events:12,note:"WOAH 共通报12起，涉及阿根廷、保加利亚、加拿大、丹麦、匈牙利、新西兰、波兰、西班牙、英国、美国等。"},
     others:{ global:{asOf:"数据截至2026年9月6日",text:"第36周，全球流感阳性率约为10%，A型病毒检出占主导。南半球：温带南美一些国家、热带南美和东非个别国家阳性率超过10%；大洋洲一个国家超过30%，并监测到活动小幅上升；温带南美一个国家活动小幅上升。北半球：中美洲和加勒比地区、西非、西欧、南欧、南亚、东南亚和东亚部分国家，以及热带南美、中东和东非个别国家阳性率超过10%；西非和南亚一些国家及东南亚一个国家超过30%；西亚、南亚和东南亚部分国家以及中美洲和加勒比地区、北欧、西非、东非和东亚个别国家监测到活动小幅上升。优势毒株：西非、东亚和大洋洲以 A(H3N2) 为优势毒株；东非、西亚、南亚和东南亚以 A(H1N1)pdm09 为主；温带南美以B型为主；中美洲和加勒比地区、热带南美A型与B型共同流行。"}, usa:{week:"第36周",asOf:"数据截至2026年9月12日",items:[{k:"ILI 就诊比例",v:"1.6%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"28,999 份",sub:"阳性 514 份（1.8%）"},{k:"A型 / B型 占比",v:"95.9% / 4.1%",sub:"A型 493 · B型 21"},{k:"公共卫生实验室",v:"64 / 371 阳性",sub:"A型 61（95.3%）· B型 3（4.7%）"},{k:"流感死亡占比",v:"0.04%",sub:"占总死亡病例"}]}, hk:{week:"第37周",asOf:"2026年9月6 — 12日",items:[{k:"普通科诊所 ILI",v:"17.8%",sub:"上周 17.2%（处于流感季节）"},{k:"私家医生 ILI",v:"49.8%",sub:"上周 47.8%"},{k:"呼吸道样本",v:"10,275 份",sub:"阳性 1,301 份（12.66%）"},{k:"阳性分型",v:"A(H1N1)pdm09 86%",sub:"A(H3N2) 9% · B型 5%"},{k:"流感入院率",v:"0.80",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
+  },
+  { id:"2026W40", weekNo:40, label:"2026年第40周", issue:"总第929期", period:"2026年9月28日 — 10月4日", published:"2026年10月7日",
+    summary:[
+      "南方省份流感病毒检测阳性率略有上升、北方省份流感活动低，全国检出流感阳性样本中甲型流感病毒占比63.2%、乙型36.8%；甲型中 A(H1N1)pdm09 占比13.1%、A(H3N2) 占比86.9%，乙型均为B(Victoria)系。全国共报告10起流感样病例暴发疫情。",
+      "A(H1N1)pdm09 中94.7%（72/76）为 A/Missouri/11/2025；A(H3N2) 中82.6%（355/430）为 A/Darwin/1454/2025（鸡胚株）、90.0%（387/430）为 A/Darwin/1415/2025（细胞株）；B(Victoria) 中93.9%（587/625）为 B/Tokyo/EIS13-175/2025。",
+      "耐药性：所有A(H1N1)pdm09毒株均对神经氨酸酶抑制剂敏感；A(H3N2) 中0.3%（1/382）、B(Victoria) 中0.3%（2/598）敏感性降低。所有毒株均对聚合酶抑制剂敏感。"
+    ],
+    ili:{ south:{value:4.8,prev:5.2,ref:{y2023:5.2,y2024:4.0,y2025:4.2}}, north:{value:3.1,prev:3.3,ref:{y2023:3.2,y2024:3.7,y2025:3.2}} },
+    iliNote:"南方ILI%低于前一周（5.2%），低于2023年同期（5.2%），高于2024和2025年同期（4.0%、4.2%）；北方ILI%低于前一周（3.3%），低于2023、2024、2025年同期（3.2%、3.7%、3.2%）。",
+    lab:{ south:{tested:9919,positive:1877,A:1172,H1N1:134,H3N2:1038,B:705,BVictoria:705}, north:{tested:7816,positive:170,A:121,H1N1:35,H3N2:86,B:49,BVictoria:49}, total:{tested:17735,positive:2047,A:1293,H1N1:169,H3N2:1124,B:754,BVictoria:754} },
+    antigen:{ period:"2026年3月30日 — 2026年10月4日", rows:[{subtype:"A(H1N1)pdm09",strain:"A/Missouri/11/2025",similar:72,similarRate:94.7,total:76},{subtype:"A(H3N2)",strain:"A/Darwin/1454/2025（鸡胚株）",similar:355,similarRate:82.6,total:430},{subtype:"A(H3N2)",strain:"A/Darwin/1415/2025（细胞株）",similar:387,similarRate:90.0,total:430},{subtype:"B(Victoria)",strain:"B/Tokyo/EIS13-175/2025",similar:587,similarRate:93.9,total:625}] },
+    resistance:{ period:"2026年3月30日 — 2026年10月4日", rows:[{name:"A(H1N1)pdm09 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"},{name:"A(H3N2) 对神经氨酸酶抑制剂",reduced:1,total:382,rate:"0.3%"},{name:"B(Victoria) 对神经氨酸酶抑制剂",reduced:2,total:598,rate:"0.3%"}] },
+    outbreaks:{ week:10, weekDetail:"1起A(H3N2)、4起A(H1N1)pdm09、3起B(Victoria)、1起混合型、1起暂未获得病原检测结果。", specimens:"南方39份中3份A(H1N1)pdm09、36份B(Victoria)；北方5份均为A(H3N2)。", cumulativePeriod:"2026年第14周 — 2026年第40周", total:378, south:286, southPrevYear:58, north:92, northPrevYear:30, regions:[{name:"西南地区",value:143},{name:"华东地区",value:103},{name:"华南地区",value:48},{name:"西北地区",value:32},{name:"东北地区",value:21},{name:"华北地区",value:18},{name:"华中地区",value:13}] },
+    human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
+    avian:{period:"2026年9月27日 — 10月3日",events:18,note:"WOAH 共通报18起，涉及加拿大、丹麦、德国、拉脱维亚、新西兰、挪威、西班牙、苏里南、瑞典、英国、美国、乌拉圭等。"},
+    others:{ global:{asOf:"数据截至2026年9月20日",text:"第38周，全球流感阳性率约为10%，A型病毒检出占主导。南半球：温带南美一些国家、热带南美和南部非洲个别国家阳性率超过10%；东南亚和大洋洲个别国家超过30%；东南亚个别国家活动小幅上升。北半球：中美洲和加勒比地区、西亚、南亚、东南亚和东亚部分国家，以及热带南美和西非个别国家阳性率超过10%；西非以及西亚、南亚和东南亚一些国家超过30%；中美洲和加勒比地区和东南亚一些国家，以及西非、东非、西亚、东亚和南亚个别国家监测到活动小幅上升。优势毒株：西非、西南欧洲和东亚以 A(H3N2) 为优势毒株；西亚、南亚和东南亚以 A(H1N1)pdm09 为主；热带和温带南美以B型为主；中美洲和加勒比地区和南非 A型与B型共同流行，大洋洲以 A(H3N2) 和 A(H1N1)pdm09 共同流行。"}, usa:{week:"第38周",asOf:"数据截至2026年9月26日",items:[{k:"ILI 就诊比例",v:"1.7%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"33,547 份",sub:"阳性 1,151 份（3.4%）"},{k:"A型 / B型 占比",v:"96.3% / 3.7%",sub:"A型 1,108 · B型 43"},{k:"公共卫生实验室",v:"131 / 630 阳性",sub:"A型 124（94.7%）· B型 7（5.3%）"},{k:"流感死亡占比",v:"0.1%",sub:"占总死亡病例"}]}, hk:{week:"第39周",asOf:"2026年9月20 — 26日",items:[{k:"普通科诊所 ILI",v:"16.0%",sub:"上周 16.5%（处于流感季节）"},{k:"私家医生 ILI",v:"38.8%",sub:"上周 40.4%"},{k:"呼吸道样本",v:"10,023 份",sub:"阳性 1,156 份（11.53%）"},{k:"阳性分型",v:"A(H1N1)pdm09 87%",sub:"A(H3N2) 7% · B型 6%"},{k:"流感入院率",v:"0.64",sub:"高于基线 0.27"}]}, tw:{week:"—",asOf:"—",items:[{k:"数据",v:"—",sub:""}]} }
   }
 ];
 /* ======================= 数据区结束 ======================= */
@@ -1433,6 +1600,263 @@ const GLOSSARY = {
   });
   document.addEventListener('scroll', () => { if (currentEl) position(currentEl); }, true);
   window.addEventListener('resize', () => { if (currentEl) position(currentEl); });
+})();
+
+
+/* ============== 2. Hero 光斑跟随鼠标 ============== */
+(function initHeroParallax(){
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  hero.addEventListener('mousemove', e => {
+    const r = hero.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width - .5;
+    const my = (e.clientY - r.top) / r.height - .5;
+    hero.style.setProperty('--mx', (mx * 70 - 140) + 'px');
+    hero.style.setProperty('--my', (my * 70 - 190) + 'px');
+  });
+  hero.addEventListener('mouseleave', () => {
+    hero.style.setProperty('--mx', '-140px');
+    hero.style.setProperty('--my', '-190px');
+  });
+})();
+
+/* ============== 3. Section 进入视口时入场（只播一次，避免闪烁） ============== */
+(function initSectionReveal(){
+  const sections = document.querySelectorAll('.section');
+  if (!sections.length) return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in-view');
+        obs.unobserve(e.target);   // 只触发一次，避免反复重播动画
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+  sections.forEach(s => obs.observe(s));
+})();
+/* ============== 4. KPI 数字滚动（渲染后自动从 0 滚到目标值） ============== */
+(function initKPICounter(){
+  const grid = document.getElementById('kpiGrid');
+  if (!grid) return;
+  let animating = false;
+  function animate(){
+    if (animating) return;
+    animating = true;
+    const targets = Array.from(grid.querySelectorAll('.kpi-value'))
+      .map(el => {
+        const raw = el.textContent.trim();
+        const m = raw.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+        if (!m) return null;
+        return {
+          el,
+          end: parseFloat(m[1]),
+          suffix: m[2] || '',
+          isInt: !m[1].includes('.')
+        };
+      })
+      .filter(Boolean);
+    const dur = 1100;
+    const t0 = performance.now();
+    (function tick(now){
+      const p = Math.min((now - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      targets.forEach(t => {
+        const v = t.end * e;
+        t.el.textContent = (t.isInt ? Math.round(v) : v.toFixed(1)) + t.suffix;
+      });
+      if (p < 1) requestAnimationFrame(tick);
+      else setTimeout(() => { animating = false; }, 60);
+    })(t0);
+  }
+  const obs = new MutationObserver(() => { if (!animating) animate(); });
+  obs.observe(grid, { childList: true, subtree: true });
+  // 首次加载也跑一遍
+  setTimeout(() => { if (grid.children.length) animate(); }, 150);
+})();
+
+/* ============== 5. 图表入场动画时长延长，让"生长"更从容 ============== */
+(function slowDownChartEntrance(){
+  if (typeof Chart === 'undefined') return;
+  Chart.defaults.animation.duration = 1500;
+  Chart.defaults.animation.easing = 'easeOutQuart';
+  if (Chart.defaults.animations && Chart.defaults.animations.y) {
+    Chart.defaults.animations.y.duration = 1400;
+  }
+})();
+
+/* ============== 6. Hero 滚动收缩（补间期间冻结 toolbar，消除 sticky 抖动） ============== */
+(function initHeroCollapse(){
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+
+  const root = document.documentElement;
+  const COLLAPSE_H = 72;      // 与 CSS 中 body.hero-collapsed .hero 高度一致
+  const EXPAND_AT  = 20;      // 展开阈值（scrollY 小于此值才展开，留足间隔防止抖动）
+  const DURATION   = 260;     // 补间时长，缩短可减少"吞滚动"感
+  const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+  const isMobile = () => window.innerWidth <= 900;
+
+  let collapsed  = false;
+  let animating  = false;
+  let ticking    = false;
+  let lastY      = window.scrollY;
+  let scrollDown = true;
+
+  const expandedHeight = () => window.innerHeight * 0.88;
+
+  function syncClass(){
+    document.body.classList.toggle('hero-collapsed', collapsed);
+  }
+
+  /* 把 toolbar 从 sticky 临时切成 fixed（位置保持不变），并用占位元素维持文档流高度 */
+  function freezeToolbar(){
+    const tb = document.querySelector('.toolbar');
+    if (!tb) return null;
+    const r = tb.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return null;
+
+    const cs = getComputedStyle(tb);
+
+    // 占位元素：尺寸与原 toolbar 在文档流中占据的空间一致
+    const ph = document.createElement('div');
+    ph.style.height       = r.height + 'px';
+    ph.style.marginTop    = cs.marginTop;      // 通常 -34px
+    ph.style.marginBottom = cs.marginBottom;   // 通常 10px
+    ph.style.visibility   = 'hidden';
+    ph.style.pointerEvents= 'none';
+    tb.parentNode.insertBefore(ph, tb.nextSibling);
+
+    // 冻结：视觉位置原地不动，但脱离 sticky 的重算
+    tb.style.position = 'fixed';
+    tb.style.top      = r.top  + 'px';
+    tb.style.left     = r.left + 'px';
+    tb.style.width    = r.width + 'px';
+    tb.style.margin   = '0';
+    tb.style.zIndex   = '50';
+
+    return { tb, ph };
+  }
+
+  function unfreezeToolbar(frozen){
+    if (!frozen) return;
+    const { tb, ph } = frozen;
+    tb.style.position = '';
+    tb.style.top      = '';
+    tb.style.left     = '';
+    tb.style.width    = '';
+    tb.style.margin   = '';
+    tb.style.zIndex   = '';
+    if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+  }
+
+  function animateTo(target){
+    if (animating) return;
+
+    const startH = hero.getBoundingClientRect().height;
+    const endH   = target ? COLLAPSE_H : expandedHeight();
+    const startY = window.scrollY;
+    const deltaH = endH - startH;
+
+    if (Math.abs(deltaH) < 1){
+      collapsed = target;
+      syncClass();
+      return;
+    }
+
+    animating = true;
+    collapsed = target;
+
+    // ① 冻结 toolbar，彻底断开它和高度补间的关系
+    const frozen = freezeToolbar();
+
+    // ② 锁住当前高度，再切 class（class 只负责字号/圆角等视觉样式）
+    hero.style.transition = 'none';
+    hero.style.height = startH + 'px';
+    syncClass();
+
+    // 补间期间禁用 CSS 平滑滚动，避免和逐帧赋值打架
+    const prevSB = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+
+    let t0 = null;
+    function frame(now){
+      if (t0 === null) t0 = now;
+      const p = Math.min((now - t0) / DURATION, 1);
+      const e = easeOutCubic(p);
+
+      hero.style.height = (startH + deltaH * e) + 'px';
+      window.scrollTo(0, startY + deltaH * e);
+
+      if (p < 1){
+        requestAnimationFrame(frame);
+        return;
+      }
+
+      // 收尾：清内联高度交给 CSS，解冻 toolbar
+      hero.style.height = '';
+      hero.style.transition = '';
+      root.style.scrollBehavior = prevSB;
+
+      unfreezeToolbar(frozen);
+
+      lastY = window.scrollY;
+      animating = false;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function update(){
+    ticking = false;
+    if (animating) return;   // 补间中不响应新的滚动判定，避免叠加
+
+    // 移动端 hero 是 auto 高度，不做收缩
+    if (isMobile()){
+      if (collapsed){
+        collapsed = false;
+        syncClass();
+      }
+      lastY = window.scrollY;
+      return;
+    }
+
+    const vh = window.innerHeight;
+    const y  = window.scrollY;
+
+    // 方向判断：单帧位移 > 2px 才更新方向，避免抖动
+    if (Math.abs(y - lastY) > 2) scrollDown = y > lastY;
+    lastY = y;
+
+    const heroH = vh * 0.88;
+
+    // 向下：滚过整个 hero 之后才收起（此时 hero 已完全离开视口，收起过程不可见）
+    if (scrollDown && !collapsed && y >= heroH){
+      animateTo(true);
+    }
+    // 向上：滚回接近顶部才展开（阈值远小于收起后的 scrollY，避免在临界点反复切换）
+    else if (!scrollDown && collapsed && y <= EXPAND_AT){
+      animateTo(false);
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking){
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (animating) return;
+    if (isMobile() && collapsed){
+      collapsed = false;
+      syncClass();
+    }
+    lastY = window.scrollY;
+    update();
+  });
+
+  update();
 })();
 </script>
 </body>
