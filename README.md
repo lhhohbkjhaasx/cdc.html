@@ -31,6 +31,7 @@
 -🐛 修复
 -修复 Hero 收起/展开时的"弹一下"问题：放弃 260ms 逐帧高度补间 + 逐帧滚动补偿的方案，改为瞬时切换高度 + 一次性同步补偿滚动位置（behavior: 'instant' + 临时关闭 CSS 平滑滚动）。
 -移除补间期间对顶部工具栏的冻结逻辑：删掉把 .toolbar 临时切成 position: fixed 并插入占位元素的 freezeToolbar / unfreezeToolbar 代码。工具栏不再参与补间期间的重排，彻底消除"贴在蓝色背景边缘弹一下"的抖动。
+
 -⚡ 优化
 -简化 initHeroCollapse：去掉 animating 状态、easeOutCubic 缓动函数和逐帧 window.scrollTo，逻辑更轻、状态更少。
 -阈值保持分离：收起阈值仍为"滚过整个 Hero"（scrollY >= 88vh），展开阈值为 scrollY <= 20，与收起后的位置（72px）拉开明显间隔，避免临界点反复切换。
