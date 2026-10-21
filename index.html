@@ -35,15 +35,20 @@
     --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;overflow-anchor:none;}
+  html{scroll-behavior:smooth;overflow-anchor:none;background:var(--paper);}
   body{
     font-family:var(--sans);
     color:var(--ink); line-height:1.65; -webkit-font-smoothing:antialiased;
-    background:
-      linear-gradient(180deg, rgba(11,87,208,.05), rgba(11,87,208,0) 420px),
-      var(--paper);
-    background-attachment:fixed;
+    background:var(--paper);
+    /* 建立自己的层叠上下文，供 ::before 的固定渐变层定位在内容之下 */
+    position:relative;z-index:0;
     min-height:100vh; overflow-anchor:none;
+  }
+  /* 顶部氛围渐变：用固定定位的独立图层代替 background-attachment:fixed。
+     后者会把整页背景绑成一张固定的绘制面，滚动时反复重绘，是长页面最典型的滚动卡顿源 */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:linear-gradient(180deg, rgba(11,87,208,.05), rgba(11,87,208,0) 420px);
   }
   ::selection{background:rgba(11,87,208,.16);}
   ::-webkit-scrollbar{width:10px;height:10px;}
@@ -175,8 +180,9 @@
   .toolbar-inner{
     display:flex;align-items:center;justify-content:space-between;
     gap:14px;flex-wrap:wrap;
-    background:rgba(255,255,255,.86);
-    backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+    /* 背后就是纯色页面底，模糊几乎看不出来，却要在每帧滚动时重新合成；
+       改成高不透明度纯白，视觉几乎一致，滚动路径上少一层 GPU 合成开销 */
+    background:rgba(255,255,255,.94);
     border:1px solid rgba(226,232,242,.95);border-radius:16px;
     box-shadow:0 12px 32px rgba(18,45,90,.13);
     padding:10px 14px;
@@ -376,13 +382,25 @@
     border:1px solid var(--line);
     box-shadow:var(--shadow);
     position:relative;z-index:1;
-    transition:transform .38s cubic-bezier(.22,1,.36,1), box-shadow .38s ease, border-color .38s ease;
+    /* 悬停的位移/缩放改用 translate / scale 这两个独立属性：
+       入场动画占用的是 transform，两者各管各的、互不覆盖，
+       因此"滚动入场"与"悬停放大"可以同时进行 */
+    transition:translate .42s cubic-bezier(.22,1,.36,1), scale .42s cubic-bezier(.22,1,.36,1),
+               border-color .42s ease;
   }
-  .card:hover{
-    transform:translateY(-5px) scale(1.022);
+  /* 悬停阴影交给独立伪元素做透明度过渡：opacity 走合成层，
+     比直接补间 60px 模糊的 box-shadow 省掉逐帧重绘 */
+  .card::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;
     box-shadow:var(--shadow-hover-lg);
+    opacity:0;transition:opacity .42s ease;pointer-events:none;z-index:-1;
+  }
+  .card:hover::before{opacity:1;}
+  .card:hover{
+    translate:0 -5px;scale:1.022;
     border-color:rgba(11,87,208,.34);
   }
+  .card:active{translate:0 -2px;scale:1.008;}
   .card-head{display:flex;align-items:center;justify-content:space-between;
     gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   .card-head h3{font-size:15px;font-weight:800;letter-spacing:.4px;color:var(--ink);}
@@ -402,14 +420,19 @@
     box-shadow:var(--shadow);
     position:relative;overflow:hidden;z-index:1;
     cursor:pointer;
-    transition:transform .38s cubic-bezier(.22,1,.36,1), box-shadow .38s ease, border-color .38s ease;
+    transition:translate .42s cubic-bezier(.22,1,.36,1), scale .42s cubic-bezier(.22,1,.36,1),
+               transform .22s cubic-bezier(.22,1,.36,1),
+               box-shadow .42s ease, border-color .42s ease;
   }
   .kpi:hover{
-    transform:translateY(-6px) scale(1.03);
+    translate:0 -6px;scale:1.03;
+    /* 倾斜走 transform：入场动画也在 transform 上，用 !important 盖过它
+       （作者 !important 的优先级高于 CSS 动画），这样滚动入场途中悬停依然生效 */
+    transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) !important;
     box-shadow:var(--shadow-hover-lg);
     border-color:rgba(11,87,208,.34);
   }
-  .kpi:active{transform:translateY(-2px) scale(1.014);}
+  .kpi:active{translate:0 -2px;scale:1.014;}
   .kpi:focus-visible{
     outline:none;border-color:var(--brand-2);
     box-shadow:0 0 0 3px rgba(59,143,243,.22), var(--shadow-hover-lg);
@@ -438,12 +461,42 @@
   .kpi:nth-child(4)::before{background:linear-gradient(90deg,#0e8a6d,#7dd3fc);}
   .kpi:nth-child(5)::before{background:linear-gradient(90deg,#d6408f,#f0a3cd);}
   .kpi-label{font-size:12px;color:var(--muted);letter-spacing:.5px;font-weight:600;}
+  .kpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
   .kpi-value{font-size:34px;font-weight:800;letter-spacing:.3px;margin:6px 0 4px;
     font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15;}
+  /* 8 周迷你趋势：让 KPI 不只是一个孤立数字 */
+  .spark{flex:none;display:block;margin-bottom:8px;overflow:visible;}
   .kpi-foot{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
   .up{color:var(--up);font-weight:700;}
   .down{color:var(--down);font-weight:700;}
   .flat{color:var(--flat);font-weight:700;}
+
+  /* ---- 本期研判：由数据自动生成的信号 ---- */
+  .signal-card{margin-bottom:18px;}
+  .signal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .signal-head h3{font-size:15px;font-weight:800;letter-spacing:.4px;color:var(--ink);}
+  .signal-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+    color:var(--muted);background:#f4f7fc;border:1px solid var(--line);
+    border-radius:999px;padding:2px 9px;}
+  .signal-live i{width:6px;height:6px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 0 2px rgba(14,138,109,.16);}
+  .signal-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .signal{display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:10px;
+    background:#f7f9fd;border:1px solid var(--line-soft);}
+  .sig-tag{flex:none;font-size:11px;font-weight:800;letter-spacing:.4px;line-height:1.6;
+    padding:1px 7px;border-radius:6px;background:#e9eef7;color:#45577a;margin-top:1px;}
+  .sig-txt{font-size:13px;line-height:1.62;color:var(--ink-2);}
+  .sig-txt b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums;}
+  /* 分级配色：只靠底色与标签色区分，不引入额外图形 */
+  .signal.warn{background:#fdf8ef;border-color:#f3e4cb;}
+  .signal.warn .sig-tag{background:#fbeedb;color:#a5671a;}
+  .signal.good{background:#f2faf7;border-color:#d8efe7;}
+  .signal.good .sig-tag{background:#ddf3ea;color:#0b6f57;}
+  .signal.info{background:#f6f9ff;border-color:#e3ecfa;}
+  .signal.info .sig-tag{background:#e7f0ff;color:var(--brand);}
+  .signal.alert{background:#fdf4f3;border-color:#f6dedb;}
+  .signal.alert .sig-tag{background:#fbe3e0;color:#b03a2e;}
+  .signal-list>.signal:nth-child(5){grid-column:1/-1;}
 
   /* ---- 摘要 ---- */
   .summary-list{list-style:none;display:flex;flex-direction:column;gap:14px;counter-reset:sum;}
@@ -488,6 +541,10 @@
   .legend-inline{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:14px;}
   .legend-inline span{display:flex;align-items:center;gap:6px;}
   .chip{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  /* 强度区间图例：与图表背景色带一一对应 */
+  .band-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:10px;}
+  .band-legend span{display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums;}
+  .band-chip{width:12px;height:9px;border-radius:2px;display:inline-block;border:1px solid;}
 
   /* ---- 小组件 ---- */
   .badge-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
@@ -569,28 +626,31 @@
   .foot-ver{text-align:right;white-space:nowrap;}
   .foot-en{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#9aa7bc;}
 
-  /* ==================== 入场动效（与 JS 观察器配合，只播一次） ==================== */
-  .section.in-view .section-title{animation:titleIn .8s cubic-bezier(.22,1,.36,1) both;}
-  .section.in-view .card,
-  .section.in-view .kpi{animation:cardIn .8s cubic-bezier(.22,1,.36,1) backwards;}
-  .section.in-view .card:nth-child(2){animation-delay:.10s;}
-  .section.in-view .card:nth-child(3){animation-delay:.20s;}
-  .section.in-view .kpi:nth-child(1){animation-delay:.02s;}
-  .section.in-view .kpi:nth-child(2){animation-delay:.08s;}
-  .section.in-view .kpi:nth-child(3){animation-delay:.14s;}
-  .section.in-view .kpi:nth-child(4){animation-delay:.20s;}
-  .section.in-view .kpi:nth-child(5){animation-delay:.26s;}
+  /* ==================== 入场动效（与 JS 观察器配合，只播一次） ====================
+     :not(.revealed) —— 入场播完 JS 会打上 revealed，此后重渲染（换期数/换区间）
+     不会再重播动画，也不会让动画继续占用 transform */
+  .section.in-view:not(.revealed) .section-title{animation:titleIn .8s cubic-bezier(.22,1,.36,1) both;}
+  .section.in-view:not(.revealed) .card,
+  .section.in-view:not(.revealed) .kpi{animation:cardIn .8s cubic-bezier(.22,1,.36,1) backwards;}
+  .section.in-view:not(.revealed) .card:nth-child(2){animation-delay:.10s;}
+  .section.in-view:not(.revealed) .card:nth-child(3){animation-delay:.20s;}
+  .section.in-view:not(.revealed) .kpi:nth-child(1){animation-delay:.02s;}
+  .section.in-view:not(.revealed) .kpi:nth-child(2){animation-delay:.08s;}
+  .section.in-view:not(.revealed) .kpi:nth-child(3){animation-delay:.14s;}
+  .section.in-view:not(.revealed) .kpi:nth-child(4){animation-delay:.20s;}
+  .section.in-view:not(.revealed) .kpi:nth-child(5){animation-delay:.26s;}
   @keyframes titleIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
   @keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
 
   @media (prefers-reduced-motion: reduce){
     .hero, .hero-inner, .hero h1, .eyebrow, .hero-sub{transition:none;}
-    .card:hover,.kpi:hover{transform:none;}
+    /* 保留阴影/描边的悬停反馈，仅去掉位移与倾斜 */
+    .card:hover,.kpi:hover{translate:none;scale:none;transform:none !important;}
     .kpi-go{transition:none;transform:none;}
     .section.sec-arrived .sec-no{animation:none;}
-    .section.in-view .section-title,
-    .section.in-view .card,
-    .section.in-view .kpi{animation:none;}
+    .section.in-view:not(.revealed) .section-title,
+    .section.in-view:not(.revealed) .card,
+    .section.in-view:not(.revealed) .kpi{animation:none;}
     .hero::before,.hero::after{transition:none;}
     .hero-scroll span{animation:none;}
     /* 期数选择器：关闭全部动效，仅保留状态切换 */
@@ -641,20 +701,29 @@
     .sec-txt{font-size:15.5px;gap:7px;}
     .sec-en{font-size:9px;letter-spacing:1.5px;}
     .card{padding:15px 15px;border-radius:13px;}
-    .card:hover{transform:none;}
+    /* 触屏没有真正的 hover，点按后 :hover 会"粘住"，这里一并复位位移/缩放 */
+    .card:hover{translate:none;scale:none;box-shadow:var(--shadow);border-color:var(--line);}
     .card-head{margin-bottom:11px;gap:8px;}
     .card-head h3{font-size:13.5px;}
     .tag{font-size:10.5px;padding:2px 9px;}
     .grid-2,.grid-2-even,.grid-3{grid-template-columns:1fr;gap:12px;}
     .kpi-grid{grid-template-columns:1fr 1fr;gap:10px;}
     .kpi{padding:13px 13px 11px;border-radius:12px;}
-    .kpi:hover{transform:none;}
+    .kpi:hover{translate:none;scale:none;transform:none !important;
+      box-shadow:var(--shadow);border-color:var(--line);}
     /* 触屏无 hover：角标常驻低透明度，保留"可点击"的提示 */
     .kpi-go{width:18px;height:18px;font-size:10px;top:6px;right:6px;border-radius:6px;
       opacity:.6;transform:none;}
     .kpi-label{font-size:10.5px;}
     .kpi-value{font-size:22px;margin:4px 0 3px;}
+    .spark{width:56px;height:22px;margin-bottom:5px;}
     .kpi-foot{font-size:10px;gap:4px;}
+    .signal-head{margin-bottom:11px;gap:8px;}
+    .signal-head h3{font-size:13.5px;}
+    .signal-list{grid-template-columns:1fr;gap:8px;}
+    .signal-list>.signal:nth-child(5){grid-column:auto;}
+    .signal{padding:10px 11px;}
+    .sig-txt{font-size:12.5px;}
     .summary-list{gap:11px;}
     .summary-list li{font-size:13px;padding-left:34px;line-height:1.75;}
     .summary-list li::before{font-size:13px;}
@@ -784,6 +853,7 @@
 
   <section class="section" id="sec-summary">
     <h2 class="section-title"><span class="sec-no">02</span><span class="sec-txt">本期摘要<span class="sec-en">Weekly Summary</span></span><span class="sec-rule"></span></h2>
+    <div class="card signal-card" id="signalCard"></div>
     <div class="card"><ul class="summary-list" id="summaryList"></ul></div>
   </section>
 
@@ -801,7 +871,8 @@
           <span><i class="chip" style="background:#0b57d0"></i>南方省份</span>
           <span><i class="chip" style="background:#f2a03d"></i>北方省份</span>
         </div>
-        <p class="hint">图表区间由顶部「图表区间」按钮控制，可切换最近8周 / 最近12周 / 全部。</p>
+        <div class="band-legend" id="iliBandLegend" aria-hidden="true"></div>
+        <p class="hint">图表区间由顶部「图表区间」按钮控制，可切换最近8周 / 最近12周 / 全部；背景色带为本报告全部期数 ILI% 的 P50 / P75 / P90 分位参考区间，非官方分级标准。</p>
       </div>
       <div class="card">
         <div class="card-head"><h3>与历史同期对比</h3></div>
@@ -1318,6 +1389,8 @@ const rate = (a, b) => (!b ? 0 : (a / b * 100));
 const rateStr = (a, b) => rate(a, b).toFixed(1);
 const charts = {};
 const state = { index: WEEKS.length - 1, range: 8 };
+// 已渲染内容的期数：用于跳过"只换图表区间"时的整页重建
+let lastContentIndex = -1;
 
 function getVisibleIndexes(){
   const n = WEEKS.length;
@@ -1334,6 +1407,40 @@ function deltaHtml(cur, prev) {
   if (d > 0) return `<span class="up">↑ ${d.toFixed(1)}</span>`;
   if (d < 0) return `<span class="down">↓ ${Math.abs(d).toFixed(1)}</span>`;
   return `<span class="flat">→ 持平</span>`;
+}
+// 整数型差值（起数），不显示小数
+function deltaCount(cur, prev) {
+  if (prev === null || prev === undefined) return '—';
+  const d = cur - prev;
+  if (d > 0) return `<span class="up">↑ ${fmt(d)}</span>`;
+  if (d < 0) return `<span class="down">↓ ${fmt(Math.abs(d))}</span>`;
+  return `<span class="flat">→ 持平</span>`;
+}
+/* 8 周迷你趋势线：内联 SVG，不额外创建 Chart 实例 */
+function sparkline(vals, color, idx) {
+  if (!vals || vals.length < 2) return '';
+  const w = 68, h = 26, pad = 3;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || 1;
+  const pts = vals.map((v, i) => {
+    const x = pad + i * (w - pad * 2) / (vals.length - 1);
+    const y = h - pad - ((v - min) / span) * (h - pad * 2);
+    return [+x.toFixed(1), +y.toFixed(1)];
+  });
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+  const area = line + 'L' + pts[pts.length - 1][0] + ' ' + h + 'L' + pts[0][0] + ' ' + h + 'Z';
+  const last = pts[pts.length - 1];
+  const gid = 'spk' + idx;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" focusable="false">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity=".22"/>
+      <stop offset="1" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="2.4" fill="${color}"/>
+  </svg>`;
 }
 function killChart(key){ if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
@@ -1374,9 +1481,10 @@ function rebuildSelect() {
   hl.className = 'wk-hl';
   box.appendChild(hl);
 
-  // 让当前选中项在面板内居中：只调整面板自身 scrollTop，不触碰页面滚动
+  // 让当前选中项在面板内居中：只调整面板自身 scrollTop，不触碰页面滚动。
+  // 面板关闭时跳过（读 getBoundingClientRect 会强制同步布局），改在 setOpen 里做
   const act = box.querySelector('.wk-option.active');
-  if (act) {
+  if (act && box.closest('.wk-select').classList.contains('open')) {
     const a = act.getBoundingClientRect(), b = box.getBoundingClientRect();
     box.scrollTop = Math.max(0, box.scrollTop + (a.top - b.top) - (box.clientHeight - a.height) / 2);
   }
@@ -1412,25 +1520,179 @@ function renderKPI(d) {
     ? `阳性 ${fmt(ls.positive)} / 检测 ${fmt(ls.tested)}`
     : `较前一周 ${deltaHtml(cur, pre)}　前一周 ${pre.toFixed(1)}%`;
 
+  // 近 8 周（含本期）：迷你趋势线的数据源
+  const spark = getter => {
+    const start = Math.max(0, state.index - 7);
+    const arr = [];
+    for (let i = start; i <= state.index; i++) arr.push(getter(WEEKS[i]));
+    return arr;
+  };
+  // 本流行季累计 vs 上一流行季同期累计
+  const lastSeason = (d.outbreaks.southPrevYear || 0) + (d.outbreaks.northPrevYear || 0);
+
   const cards = [
-    { cls:'', target:'sec-ili',      name:'南方省份 ILI%',      label:'南方省份 <span class="term" data-term="ILI%">ILI%</span>', value:s.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(s.value, s.prev)}　前一周 ${s.prev.toFixed(1)}%` },
-    { cls:'', target:'sec-ili',      name:'北方省份 ILI%',      label:'北方省份 <span class="term" data-term="ILI%">ILI%</span>', value:n.value.toFixed(1)+'%', foot:`较前一周 ${deltaHtml(n.value, n.prev)}　前一周 ${n.prev.toFixed(1)}%` },
-    { cls:'', target:'sec-patho',    name:'南方流感病毒阳性率', label:'南方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>', value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate) },
-    { cls:'', target:'sec-patho',    name:'北方流感病毒阳性率', label:'北方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>', value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate) },
-    { cls:'', target:'sec-outbreak', name:'本周暴发疫情',      label:'本周<span class="term" data-term="暴发疫情">暴发疫情</span>', value:fmt(d.outbreaks.week)+' 起', foot:`本流行季累计 ${fmt(d.outbreaks.total)} 起` }
+    { target:'sec-ili', name:'南方省份 ILI%',
+      label:'南方省份 <span class="term" data-term="ILI%">ILI%</span>',
+      value:s.value.toFixed(1)+'%',
+      foot:`较前一周 ${deltaHtml(s.value, s.prev)}　较2025同期 ${deltaHtml(s.value, s.ref.y2025)}`,
+      spark:spark(w => w.ili.south.value), color:'#0b57d0' },
+    { target:'sec-ili', name:'北方省份 ILI%',
+      label:'北方省份 <span class="term" data-term="ILI%">ILI%</span>',
+      value:n.value.toFixed(1)+'%',
+      foot:`较前一周 ${deltaHtml(n.value, n.prev)}　较2025同期 ${deltaHtml(n.value, n.ref.y2025)}`,
+      spark:spark(w => w.ili.north.value), color:'#f2a03d' },
+    { target:'sec-patho', name:'南方流感病毒阳性率',
+      label:'南方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>',
+      value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate),
+      spark:spark(w => rate(w.lab.south.positive, w.lab.south.tested)), color:'#12a594' },
+    { target:'sec-patho', name:'北方流感病毒阳性率',
+      label:'北方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>',
+      value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate),
+      spark:spark(w => rate(w.lab.north.positive, w.lab.north.tested)), color:'#0e8a6d' },
+    { target:'sec-outbreak', name:'本周暴发疫情',
+      label:'本周<span class="term" data-term="暴发疫情">暴发疫情</span>',
+      value:fmt(d.outbreaks.week)+' 起',
+      foot:`本季累计 ${fmt(d.outbreaks.total)} 起　较上季同期 ${deltaCount(d.outbreaks.total, lastSeason)}`,
+      spark:spark(w => w.outbreaks.week), color:'#d6408f' }
   ];
-  $('kpiGrid').innerHTML = cards.map(c => `
-    <div class="kpi ${c.cls}" data-target="${c.target}" role="button" tabindex="0"
+
+  $('kpiGrid').innerHTML = cards.map((c, i) => `
+    <div class="kpi" data-target="${c.target}" role="button" tabindex="0"
       aria-label="${c.name}，点击查看对应章节" title="点击查看对应章节">
       <div class="kpi-go" aria-hidden="true">→</div>
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-row">
+        <div class="kpi-value">${c.value}</div>
+        ${sparkline(c.spark, c.color, i)}
+      </div>
       <div class="kpi-foot">${c.foot}</div>
     </div>`).join('');
 }
 
 function renderSummary(d) {
   $('summaryList').innerHTML = d.summary.map(t => `<li>${t}</li>`).join('');
+}
+
+/* ---------------- 本期研判：由本期数据自动生成的信号 ----------------
+   设计原则：只陈述可由数据直接算出的比较（环比、近三年同期均值、
+   连续周数、累计倍数、型别与耐药占比），不做超出数据的流行病学推断。 */
+const signed = v => {
+  const r = Math.round(v * 10) / 10;          // 先定到 1 位小数，避免出现 "−0.0"
+  if (Math.abs(r) < 0.05) return '持平';
+  return (r > 0 ? '+' : '−') + Math.abs(r).toFixed(1);
+};
+
+// 序列末尾连续同向的周数：正数=连续上升，负数=连续下降
+function runLen(arr, minStep) {
+  if (arr.length < 2) return 0;
+  const dir = Math.sign(arr[arr.length - 1] - arr[arr.length - 2]);
+  if (!dir) return 0;
+  let n = 0;
+  for (let i = arr.length - 1; i > 0; i--) {
+    const d = arr[i] - arr[i - 1];
+    if (Math.sign(d) !== dir || Math.abs(d) < minStep) break;
+    n++;
+  }
+  return n * dir;
+}
+
+function buildSignals(d, prev) {
+  const out = [];
+  const s = d.ili.south, n = d.ili.north;
+  const dS = +(s.value - s.prev).toFixed(1);
+  const dN = +(n.value - n.prev).toFixed(1);
+
+  // 01 南北方 ILI% 走向
+  if (dS >= 0.1 && dN >= 0.1) {
+    out.push({ level:'warn', tag:'趋势', html:`南、北方 ILI% 同步上升：南方 <b>${s.value.toFixed(1)}%</b>（${signed(dS)}）、北方 <b>${n.value.toFixed(1)}%</b>（${signed(dN)}），需关注活动增强。` });
+  } else if (dS <= -0.1 && dN <= -0.1) {
+    out.push({ level:'good', tag:'趋势', html:`南、北方 ILI% 同步回落：南方 <b>${s.value.toFixed(1)}%</b>（${signed(dS)}）、北方 <b>${n.value.toFixed(1)}%</b>（${signed(dN)}）。` });
+  } else if (Math.abs(dS) < 0.1 && Math.abs(dN) < 0.1) {
+    out.push({ level:'info', tag:'趋势', html:`南、北方 ILI% 基本持平：南方 <b>${s.value.toFixed(1)}%</b>、北方 <b>${n.value.toFixed(1)}%</b>。` });
+  } else {
+    out.push({ level:'info', tag:'趋势', html:`南北方走势分化：南方 <b>${s.value.toFixed(1)}%</b>（${signed(dS)}）、北方 <b>${n.value.toFixed(1)}%</b>（${signed(dN)}）。` });
+  }
+
+  // 02 与近三年同期均值比较
+  const avg3 = o => (o.ref.y2023 + o.ref.y2024 + o.ref.y2025) / 3;
+  const aS = avg3(s), aN = avg3(n);
+  const gS = s.value - aS, gN = n.value - aN;
+  if (gS > 0.3 && gN > 0.3) {
+    out.push({ level:'warn', tag:'基线', html:`两地 ILI% 均高于近三年同期均值：南方高出 <b>${gS.toFixed(1)}</b> 个百分点、北方高出 <b>${gN.toFixed(1)}</b> 个百分点。` });
+  } else if (gS < -0.3 && gN < -0.3) {
+    out.push({ level:'good', tag:'基线', html:`两地 ILI% 均低于近三年同期均值（南方低 <b>${Math.abs(gS).toFixed(1)}</b>、北方低 <b>${Math.abs(gN).toFixed(1)}</b> 个百分点），处于同期低位。` });
+  } else {
+    out.push({ level:'info', tag:'基线', html:`与近三年同期均值相比：南方 <b>${s.value.toFixed(1)}%</b> vs ${aS.toFixed(1)}%（${signed(gS)}）、北方 <b>${n.value.toFixed(1)}%</b> vs ${aN.toFixed(1)}%（${signed(gN)}）。` });
+  }
+
+  // 03 全国阳性率与连续走向
+  const pSeries = [];
+  for (let i = Math.max(0, state.index - 11); i <= state.index; i++) {
+    pSeries.push(rate(WEEKS[i].lab.total.positive, WEEKS[i].lab.total.tested));
+  }
+  const pCur = pSeries[pSeries.length - 1];
+  const pPrev = pSeries.length > 1 ? pSeries[pSeries.length - 2] : null;
+  const rl = runLen(pSeries, 0.15);
+  const pBase = `全国流感病毒阳性率 <b>${pCur.toFixed(1)}%</b>` +
+    (pPrev === null ? '' : `（较前一周 ${signed(pCur - pPrev)} 个百分点）`);
+  if (rl >= 3) {
+    out.push({ level:'warn', tag:'阳性率', html:`${pBase}，已连续 <b>${rl} 周</b>上升。` });
+  } else if (rl <= -3) {
+    out.push({ level:'good', tag:'阳性率', html:`${pBase}，已连续 <b>${-rl} 周</b>下降。` });
+  } else {
+    out.push({ level:'info', tag:'阳性率', html:`${pBase}，近几周无明显单向趋势。` });
+  }
+
+  // 04 暴发疫情：本周 + 环比 + 本季累计同比
+  const ob = d.outbreaks;
+  const lastSeason = (ob.southPrevYear || 0) + (ob.northPrevYear || 0);
+  const times = lastSeason ? ob.total / lastSeason : null;
+  let obHtml = `本周报告暴发疫情 <b>${fmt(ob.week)} 起</b>`;
+  if (prev) {
+    const dp = ob.week - prev.outbreaks.week;
+    obHtml += dp > 0 ? `（较前一周 +${dp} 起）` : dp < 0 ? `（较前一周 −${Math.abs(dp)} 起）` : '（与前一周持平）';
+  }
+  if (times !== null && times >= 1.5) {
+    out.push({ level:'warn', tag:'暴发', html: obHtml + `；本流行季累计 <b>${fmt(ob.total)} 起</b>，为上一流行季同期（${fmt(lastSeason)} 起）的 <b>${times.toFixed(1)} 倍</b>。` });
+  } else {
+    out.push({ level:'info', tag:'暴发', html: obHtml + (times === null ? '。' : `；本流行季累计 ${fmt(ob.total)} 起。`) });
+  }
+
+  // 05 优势型别与耐药
+  const lb = d.lab.total;
+  const rows = d.resistance.rows || [];
+  const worst = rows.reduce((m, r) => (!r.total ? m : Math.max(m, r.reduced / r.total * 100)), 0);
+  const parts = [];
+  if (lb && lb.positive) {
+    const aPct = lb.A / lb.positive * 100;
+    const bPct = 100 - aPct;
+    const aMajor = aPct >= bPct;
+    parts.push(`阳性标本以 <b>${aMajor ? 'A 型' : 'B 型'}</b>为主（${(aMajor ? aPct : bPct).toFixed(1)}%）`);
+    if (aMajor && lb.A) parts.push(`其中 A(H3N2) 占 A 型的 <b>${(lb.H3N2 / lb.A * 100).toFixed(1)}%</b>`);
+  }
+  parts.push(worst >= 1
+    ? `神经氨酸酶抑制剂敏感性降低最高 <b>${worst.toFixed(1)}%</b>`
+    : worst > 0
+      ? `敏感性降低比例均 <b>≤ ${worst.toFixed(1)}%</b>`
+      : '所有毒株对神经氨酸酶抑制剂敏感');
+  out.push({ level: worst >= 1 ? 'warn' : 'good', tag:'病原', html: parts.join('；') + '。' });
+
+  return out;
+}
+
+function renderSignals(d) {
+  const el = $('signalCard');
+  if (!el) return;
+  const prev = state.index > 0 ? WEEKS[state.index - 1] : null;
+  const sigs = buildSignals(d, prev);
+  el.innerHTML = `
+    <div class="signal-head">
+      <h3>本期研判</h3>
+      <span class="signal-live"><i></i>由本期数据自动生成</span>
+    </div>
+    <div class="signal-list">
+      ${sigs.map(x => `<div class="signal ${x.level}"><span class="sig-tag">${x.tag}</span><span class="sig-txt">${x.html}</span></div>`).join('')}
+    </div>`;
 }
 
 function renderILI(d) {
@@ -1669,7 +1931,76 @@ function mountChart(key, canvasId, config){
   obs.observe(wrap);
 }
 
+/* ---------------- ILI% 强度参考区间（图表背景色带） ----------------
+   阈值不凭空设定：取本报告全部期数南北方 ILI% 的分位数（P50/P75/P90），
+   作为"相对本报告历史"的强度参考，并在图例中标注非官方分级标准。 */
+const ILI_BANDS = (() => {
+  const v = [];
+  WEEKS.forEach(w => { v.push(w.ili.south.value, w.ili.north.value); });
+  v.sort((a, b) => a - b);
+  const q = p => v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))];
+  return [
+    { label:'低',   from:0,       to:q(0.50),  fill:'rgba(14,138,109,.06)', edge:'rgba(14,138,109,.32)' },
+    { label:'中',   from:q(0.50), to:q(0.75),  fill:'rgba(11,87,208,.05)',  edge:'rgba(11,87,208,.28)' },
+    { label:'较高', from:q(0.75), to:q(0.90),  fill:'rgba(242,160,61,.09)', edge:'rgba(181,114,26,.32)' },
+    { label:'高',   from:q(0.90), to:Infinity, fill:'rgba(201,79,66,.08)',  edge:'rgba(201,79,66,.32)' }
+  ];
+})();
+
+// 只挂在 ILI 图上：先画色带，再画网格与折线，色带始终处于最底层
+const iliBandPlugin = {
+  id:'iliBands',
+  beforeDraw(chart){
+    const a = chart.chartArea, y = chart.scales.y, ctx = chart.ctx;
+    if (!a || !y) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+    ctx.clip();
+    const px = val => y.getPixelForValue(val);
+    ILI_BANDS.forEach(b => {
+      const top = Math.max(a.top, Math.min(a.bottom, px(b.to === Infinity ? y.max : b.to)));
+      const bot = Math.max(a.top, Math.min(a.bottom, px(b.from)));
+      const h = bot - top;
+      if (h <= 0.5) return;
+      ctx.fillStyle = b.fill;
+      ctx.fillRect(a.left, top, a.right - a.left, h);
+      // 分位阈值线：虚线，避免与折线抢视觉
+      ctx.strokeStyle = b.edge;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(a.left, Math.round(bot) + .5);
+      ctx.lineTo(a.right, Math.round(bot) + .5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (h > 16) {
+        ctx.fillStyle = b.edge;
+        ctx.font = '700 10px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(b.label, a.left + 8, top + h / 2);
+      }
+    });
+    ctx.restore();
+  }
+};
+
+function bandText(b, i){
+  if (i === 0) return `< ${b.to.toFixed(1)}%`;
+  if (b.to === Infinity) return `≥ ${b.from.toFixed(1)}%`;
+  return `${b.from.toFixed(1)}–${b.to.toFixed(1)}%`;
+}
+function renderBandLegend(){
+  const el = $('iliBandLegend');
+  if (!el || el.dataset.built) return;
+  el.innerHTML = ILI_BANDS.map((b, i) =>
+    `<span><i class="band-chip" style="background:${b.fill};border-color:${b.edge}"></i>${b.label} ${bandText(b, i)}</span>`).join('');
+  el.dataset.built = '1';
+}
+
 function renderCharts() {
+  renderBandLegend();
   const idxs = getVisibleIndexes();
   const curPos = idxs.indexOf(state.index);
   const labels = idxs.map(i => '第' + WEEKS[i].weekNo + '周');
@@ -1715,7 +2046,8 @@ function renderCharts() {
         y: { beginAtZero: true, grid: { color: 'rgba(238,243,250,.9)' },
              ticks: { color: '#8a94a8', font: { size: 11.5 }, callback: v => v + '%' } }
       }
-    }
+    },
+    plugins: [iliBandPlugin]
   });
 
   // ---- 阳性率折线图 ----
@@ -1840,28 +2172,39 @@ function goToSection(id){
 })();
 
 function render(scrollTop = true) {
+  // 切换图表区间后，当前期数可能已不在可见列表里：先校正再渲染，
+  // 否则正文会停留在旧期、而选择器已经跳到最新一期
+  const idxs = getVisibleIndexes();
+  if (!idxs.includes(state.index)) state.index = idxs[idxs.length - 1];
   const d = WEEKS[state.index];
-  renderHeader(d);
 
-  // 安全更新"当前选中"标签：元素不存在也不会报错
-  const iliEl = $('iliCurrentWeek');
-  const posEl = $('posCurrentWeek');
-  if (iliEl) iliEl.textContent = d.label + '（' + d.issue + '）';
-  if (posEl) posEl.textContent = d.label + '（' + d.issue + '）';
+  // 内容只依赖"期数"：切换图表区间时跳过全部内容重建，
+  // 只重绘图表，省掉整页 innerHTML 重排与 KPI 数字从 0 重跑
+  if (state.index !== lastContentIndex) {
+    lastContentIndex = state.index;
+    renderHeader(d);
 
-  renderKPI(d);
-  renderSummary(d);
-  renderILI(d);
-  renderLab(d);
-  renderOutbreak(d);
-  renderVirology(d);
-  renderAnimal(d);
-  renderOthers(d);
+    // 安全更新"当前选中"标签：元素不存在也不会报错
+    const iliEl = $('iliCurrentWeek');
+    const posEl = $('posCurrentWeek');
+    if (iliEl) iliEl.textContent = d.label + '（' + d.issue + '）';
+    if (posEl) posEl.textContent = d.label + '（' + d.issue + '）';
+
+    renderKPI(d);
+    renderSummary(d);
+    renderSignals(d);
+    renderILI(d);
+    renderLab(d);
+    renderOutbreak(d);
+    renderVirology(d);
+    renderAnimal(d);
+    renderOthers(d);
+  }
+
   renderCharts();
   rebuildSelect();
   updateRangeButtons();
 
-  const idxs = getVisibleIndexes();
   const pos = idxs.indexOf(state.index);
   $('prevBtn').disabled = pos <= 0;
   $('nextBtn').disabled = pos >= idxs.length - 1;
@@ -1907,10 +2250,17 @@ function render(scrollTop = true) {
     const want = Math.max(14, Math.min(tr.left, vw - 14 - w));
     panel.style.left = (want - sel.getBoundingClientRect().left) + 'px';
   }
+  // 让当前选中项在面板内居中（只在面板真正打开时执行一次）
+  function centerActive(){
+    const act = box.querySelector('.wk-option.active');
+    if (!act) return;
+    const a = act.getBoundingClientRect(), b = box.getBoundingClientRect();
+    box.scrollTop = Math.max(0, box.scrollTop + (a.top - b.top) - (box.clientHeight - a.height) / 2);
+  }
   function setOpen(open){
     sel.classList.toggle('open', open);
     trig.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) { place(); syncScrollShadow(); }
+    if (open) { place(); centerActive(); syncScrollShadow(); }
     else { hideHl(); }
   }
 
@@ -1923,12 +2273,20 @@ function render(scrollTop = true) {
   function syncScrollShadow(){ panel.classList.toggle('scrolled', box.scrollTop > 2); }
 
   if (trig) {
-    // 悬停辉光跟随光标位置
+    // 悬停辉光跟随光标位置：rAF 合并高频指针事件，每帧最多写一次变量
+    let glowRAF = 0, glowPt = null, glowRect = null;
+    trig.addEventListener('pointerenter', () => { glowRect = trig.getBoundingClientRect(); });
+    trig.addEventListener('pointerleave', () => { glowRect = null; });
     trig.addEventListener('pointermove', e => {
-      const r = trig.getBoundingClientRect();
-      trig.style.setProperty('--rx', (e.clientX - r.left) + 'px');
-      trig.style.setProperty('--ry', (e.clientY - r.top) + 'px');
-    });
+      if (!glowRect) glowRect = trig.getBoundingClientRect();
+      glowPt = { x:e.clientX, y:e.clientY };
+      if (glowRAF) return;
+      glowRAF = requestAnimationFrame(() => {
+        glowRAF = 0;
+        trig.style.setProperty('--rx', (glowPt.x - glowRect.left) + 'px');
+        trig.style.setProperty('--ry', (glowPt.y - glowRect.top) + 'px');
+      });
+    }, { passive:true });
   }
   box.addEventListener('pointermove', e => {
     const h = getHl(); if (!h) return;
@@ -2028,14 +2386,25 @@ const GLOSSARY = {
   const hero = document.querySelector('.hero');
   if (!hero) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let raf = 0, rect = null, px = 0, py = 0;
+  // mousemove 触发频率可能远高于刷新率：用 rAF 合并，每帧最多写一次 CSS 变量
+  function paint(){
+    raf = 0;
+    if (!rect) return;
+    hero.style.setProperty('--mx', ((px - .5) * 70 - 140) + 'px');
+    hero.style.setProperty('--my', ((py - .5) * 70 - 190) + 'px');
+  }
+  // 尺寸只在进入时量一次，避免每次移动都读取布局
+  hero.addEventListener('mouseenter', () => { rect = hero.getBoundingClientRect(); });
   hero.addEventListener('mousemove', e => {
-    const r = hero.getBoundingClientRect();
-    const mx = (e.clientX - r.left) / r.width - .5;
-    const my = (e.clientY - r.top) / r.height - .5;
-    hero.style.setProperty('--mx', (mx * 70 - 140) + 'px');
-    hero.style.setProperty('--my', (my * 70 - 190) + 'px');
-  });
+    if (!rect) rect = hero.getBoundingClientRect();
+    px = (e.clientX - rect.left) / rect.width;
+    py = (e.clientY - rect.top) / rect.height;
+    if (!raf) raf = requestAnimationFrame(paint);
+  }, { passive: true });
   hero.addEventListener('mouseleave', () => {
+    rect = null;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
     hero.style.setProperty('--mx', '-140px');
     hero.style.setProperty('--my', '-190px');
   });
@@ -2047,13 +2416,65 @@ const GLOSSARY = {
   if (!sections.length) return;
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in-view');
-        obs.unobserve(e.target);   // 只触发一次，避免反复重播动画
-      }
+      if (!e.isIntersecting) return;
+      const sec = e.target;
+      sec.classList.add('in-view');
+      obs.unobserve(sec);   // 只触发一次，避免反复重播动画
+      // 动画播完（0.8s + 最多 0.26s 交错延迟）后打上 revealed：
+      // 之后换期数/换区间重渲染时不再重播，动画也不再占用 transform
+      setTimeout(() => sec.classList.add('revealed'), 1200);
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+  }, {
+    threshold: 0,
+    // 上下各外扩 120px：在 section 还是"完全在视口外"时就加上 in-view，
+    // 动画的起始态（opacity:0）在看不见的地方生效 —— 否则先可见再变透明就是闪烁
+    rootMargin: '120px 0px 120px 0px'
+  });
   sections.forEach(s => obs.observe(s));
+})();
+
+/* ============== 3.1 KPI 卡片 3D 倾斜 ==============
+   单个 document 级监听 + rAF 节流，只对鼠标下的那张 KPI 写倾斜变量；
+   图表卡片保持 2D，避免 canvas 在 3D 变换下变糊。 */
+(function initKPITilt(){
+  const fine    = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const MAX_TILT = 3.2;                 // 最大倾斜角（度）：克制才像专业看板
+  const VARS = ['--rx','--ry'];
+  let raf = 0, host = null, pt = null;
+
+  function paint(){
+    raf = 0;
+    if (!host || !pt) return;
+    const r = host.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const px = (pt.x - r.left) / r.width;   // 0~1
+    const py = (pt.y - r.top) / r.height;
+    host.style.setProperty('--rx', ((0.5 - py) * 2 * MAX_TILT).toFixed(2) + 'deg');
+    host.style.setProperty('--ry', ((px - 0.5) * 2 * MAX_TILT).toFixed(2) + 'deg');
+  }
+  function reset(el){
+    if (el) VARS.forEach(v => el.style.removeProperty(v));
+  }
+
+  document.addEventListener('pointermove', e => {
+    if (!fine.matches || reduced.matches) return;
+    const el = e.target instanceof Element ? e.target.closest('.kpi') : null;
+    if (el !== host){ reset(host); host = el; }
+    if (!host) return;
+    pt = { x: e.clientX, y: e.clientY };
+    if (!raf) raf = requestAnimationFrame(paint);
+  }, { passive: true });
+
+  // 指针离开卡片（或离开整个文档）时复位，避免残留倾斜
+  document.addEventListener('pointerout', e => {
+    if (!host || !(e.target instanceof Element)) return;
+    if (!e.target.closest('.kpi')) return;
+    const to = e.relatedTarget;
+    if (to instanceof Element && host.contains(to)) return;
+    reset(host); host = null;
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => { reset(host); host = null; }, { passive: true });
 })();
 /* ============== 4. KPI 数字滚动（渲染后自动从 0 滚到目标值） ============== */
 (function initKPICounter(){
@@ -2062,6 +2483,8 @@ const GLOSSARY = {
   let animating = false;
   function animate(){
     if (animating) return;
+    // 标签页不可见或用户要求减少动效时，直接保留已渲染的最终值，不跑逐帧写入
+    if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     animating = true;
     const targets = Array.from(grid.querySelectorAll('.kpi-value'))
       .map(el => {
@@ -2076,7 +2499,7 @@ const GLOSSARY = {
         };
       })
       .filter(Boolean);
-    const dur = 1100;
+    const dur = 800;   // 缩短计数时长：既保留"滚动"感，也减少与图表重绘重叠的帧
     const t0 = performance.now();
     (function tick(now){
       const p = Math.min((now - t0) / dur, 1);
