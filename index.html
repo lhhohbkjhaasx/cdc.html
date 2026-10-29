@@ -1439,6 +1439,22 @@ const WEEKS = [
     human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"WHO 未通报"},
     avian:{period:"2026年10月11 — 17日",events:18,note:"WOAH 共通报18起，涉及保加利亚、中国台湾、丹麦、冰岛、拉脱维亚、荷兰、新西兰、挪威、秘鲁、塞尔维亚、西班牙、英国等。"},
     others:{ global:{asOf:"数据截至2026年10月4日",text:"第40周，全球流感阳性率低于10%，A型病毒检出占主导。南半球：温带和亚热带地区流感阳性率低于10%，热带地区约为10%；热带南美以及温带南美、东非个别国家超过10%；大洋洲个别国家超过30%；热带南美和东非个别国家活动小幅上升。北半球：中美洲和加勒比地区、西非、西亚、南亚、东南亚和东亚一些国家超过10%；南亚和东南亚一些国家，以及西非、东非和西亚个别国家超过30%；中美洲和加勒比地区、西非、南亚和东南亚一些国家，以及东非和北欧个别国家活动小幅上升。优势毒株：东非、西亚、南亚、东南亚和大洋洲以 A(H1N1)pdm09 为主；中美洲和加勒比地区、热带和温带南美以B型为主；西非 A型与B型共同流行；东亚 A(H1N1)pdm09 与 A(H3N2) 共同流行。"}, usa:{week:"第40周",asOf:"数据截至2026年10月10日",items:[{k:"ILI 就诊比例",v:"2.1%",sub:"基线 3.1%"},{k:"临床实验室检测",v:"45,331 份",sub:"阳性 2,270 份（5.0%）"},{k:"A型 / B型 占比",v:"97.9% / 2.1%",sub:"A型 2,222 · B型 48"},{k:"公共卫生实验室",v:"300 / 800 阳性",sub:"A型 292（97.3%）· B型 8（2.7%）"},{k:"流感死亡占比",v:"0.2%",sub:"占总死亡病例"}]}, hk:{week:"第41周",asOf:"2026年10月4日 — 10月10日",items:[{k:"普通科诊所 ILI",v:"13.0%",sub:"上周 15.3%（处于流感季节，高水平）"},{k:"私家医生 ILI",v:"26.5%",sub:"上周 45.3%"},{k:"呼吸道样本",v:"9,767 份",sub:"阳性 1,120 份（11.47%）"},{k:"阳性分型",v:"A(H1N1)pdm09 94%",sub:"A(H3N2) 3% · B型 3%"},{k:"流感入院率",v:"0.64",sub:"高于基线 0.27"}]}, tw:{week:"第40周",asOf:"2026年10月4日 — 10月10日",items:[{k:"社区优势毒株",v:"A(H1N1)pdm09 为主",sub:"近4周A型占99%、B型1%"},{k:"门急诊就诊",v:"128,847 人次",sub:"较前一周略降，仍处流行期"},{k:"本流感季重症",v:"149 例",sub:"其中15例死亡，须留意重症风险"}]} }
+  },
+  { id:"2026W43", weekNo:43, label:"2026年第43周", issue:"总第932期", period:"2026年10月19日 — 10月25日", published:"2026年10月28日",
+    summary:[
+      "第43周全国流感监测网络实验室共检测20429份标本，检出流感病毒阳性2413份（11.8%）；阳性样本中甲型流感病毒占67.6%、乙型占32.4%；甲型中 A(H1N1)pdm09 占32.8%、A(H3N2) 占67.2%，乙型均为B(Victoria)系。南方省份阳性率18.0%（1933/10720），北方省份4.9%（480/9709）。全国共报告145起流感样病例暴发疫情。",
+      "抗原性（2026年3月30日—10月25日累计）：A(H1N1)pdm09 中94.7%（72/76）为 A/Missouri/11/2025 类似株；A(H3N2) 中82.6%（355/430）为 A/Darwin/1454/2025（鸡胚株）、90.0%（387/430）为 A/Darwin/1415/2025（细胞株）类似株；B(Victoria) 中93.7%（658/702）为 B/Tokyo/EIS13-175/2025 类似株。第43周另对56株 B(Victoria) 分析，94.6%（53/56）为类似株。",
+      "耐药性：第43周对62株 A(H3N2) 和62株 B(Victoria) 分析，所有毒株均对神经氨酸酶抑制剂敏感；累计（3月30日—10月25日）除1株 A(H3N2) 与2株 B(Victoria) 敏感性降低外，其余 A(H3N2)、B(Victoria) 均敏感，所有 A(H1N1)pdm09 均敏感；所有毒株均对聚合酶抑制剂敏感。"
+    ],
+    ili:{ south:{value:4.5,prev:4.5,ref:{y2023:5.6,y2024:3.3,y2025:4.1}}, north:{value:3.0,prev:2.8,ref:{y2023:4.2,y2024:3.2,y2025:3.7}} },
+    iliNote:"南方省份ILI%与前一周（4.5%）持平，低于2023年同期水平（5.6%），高于2024年和2025年同期水平（3.3%、4.1%）；北方省份ILI%高于前一周（2.8%），低于2023年、2024年和2025年同期水平（4.2%、3.2%和3.7%）。",
+    lab:{ south:{tested:10720,positive:1933,A:1243,H1N1:271,H3N2:972,B:690,BVictoria:690}, north:{tested:9709,positive:480,A:387,H1N1:263,H3N2:124,B:93,BVictoria:93}, total:{tested:20429,positive:2413,A:1630,H1N1:534,H3N2:1096,B:783,BVictoria:783} },
+    antigen:{ period:"2026年3月30日 — 2026年10月25日", rows:[{subtype:"A(H1N1)pdm09",strain:"A/Missouri/11/2025",similar:72,similarRate:94.7,total:76},{subtype:"A(H3N2)",strain:"A/Darwin/1454/2025（鸡胚株）",similar:355,similarRate:82.6,total:430},{subtype:"A(H3N2)",strain:"A/Darwin/1415/2025（细胞株）",similar:387,similarRate:90.0,total:430},{subtype:"B(Victoria)",strain:"B/Tokyo/EIS13-175/2025",similar:658,similarRate:93.7,total:702}] },
+    resistance:{ period:"2026年3月30日 — 2026年10月25日", rows:[{name:"A(H1N1)pdm09 对神经氨酸酶抑制剂",reduced:0,total:null,rate:"全部敏感"},{name:"A(H3N2) 对神经氨酸酶抑制剂",reduced:1,total:null,rate:""},{name:"B(Victoria) 对神经氨酸酶抑制剂",reduced:2,total:null,rate:""}] },
+    outbreaks:{ week:145, weekDetail:"14起A(H3N2)、28起A(H1N1)pdm09、20起A型（亚型未显示）、22起B(Victoria)、1起B型（系未显示）、22起混合型、3起流感阴性、35起暂未获得病原检测结果。", specimens:"南方省份网络实验室共收检367份暴发疫情标本（142份A(H1N1)pdm09、84份A(H3N2)、141份B(Victoria)）；北方省份收检份数本报告正文未给出。", cumulativePeriod:"2026年第14周 — 2026年第43周", total:553, south:406, southPrevYear:163, north:147, northPrevYear:101, regions:[{name:"西南地区",value:289},{name:"华东地区",value:115},{name:"华南地区",value:52},{name:"西北地区",value:40},{name:"东北地区",value:23},{name:"华北地区",value:21},{name:"华中地区",value:13}] },
+    human:{risk:"低风险",focus:"H9N2亚型的 A/Suzhou/1209KS/2025 类似毒株",who:"本周 WHO 未通报人感染新亚型流感疫情"},
+    avian:{period:"2026年10月18 — 24日",events:20,note:"WOAH 共通报20起高致病性禽流感动物疫情事件（H5N1 14起、H5N5 3起、H5(N待定) 3起），涉及阿尔巴尼亚、比利时、加拿大、丹麦、冰岛、爱尔兰、意大利、拉脱维亚、荷兰、新西兰、挪威、塞尔维亚、西班牙、苏里南、瑞典、英国等。"},
+    others:{ global:{asOf:"第41周",text:"第41周，全球流感阳性率低于10%，A型病毒检出占主导。北半球温带和亚热带地区流感阳性率低于10%，近三周报告检测的样本数有所减少；南半球温带和亚热带地区流感阳性率低于10%，热带地区约为15%。"}, usa:{week:"第41周",asOf:"数据截至2026年10月17日",items:[{k:"ILI 就诊比例",v:"2.2%",sub:"基线 3.1%"},{k:"公共卫生实验室",v:"323 / 877 阳性",sub:"A型 318（98.5%）· B型 5（1.5%）"},{k:"A型亚型构成",v:"A(H1N1)pdm09 99.2%",sub:"241份完成分型 · A(H5) 2份 · 77份未分型"}]}, hk:{week:"第42周",asOf:"2026年10月11日 — 10月17日",items:[{k:"普通科诊所 ILI",v:"10.6‰",sub:"上周 13.0‰（处于流感季节，高水平）"},{k:"呼吸道样本",v:"9,710 份",sub:"阳性 975 份（10.04%）"},{k:"阳性分型",v:"A(H1N1)pdm09 95%",sub:"A(H3N2) 2% · B型 3%"},{k:"阳性率对比",v:"高于基线 4.94%",sub:"低于前一周 11.47%"}]}, tw:{week:"第41周",asOf:"2026年10月11日 — 10月17日",items:[{k:"社区优势毒株",v:"A(H1N1)pdm09 为主",sub:"近4周A型占98%、B型2%"},{k:"本流感季重症",v:"307 例",sub:"其中42例死亡"}]} }
   }
 ];
 /* ======================= 数据区结束 ======================= */
@@ -1724,6 +1740,7 @@ function buildSignals(d, prev) {
   const lb = d.lab.total;
   const rows = d.resistance.rows || [];
   const worst = rows.reduce((m, r) => (!r.total ? m : Math.max(m, r.reduced / r.total * 100)), 0);
+  const reducedCount = rows.reduce((s, r) => s + (r.reduced || 0), 0);
   const parts = [];
   if (lb && lb.positive) {
     const aPct = lb.A / lb.positive * 100;
@@ -1736,7 +1753,9 @@ function buildSignals(d, prev) {
     ? `神经氨酸酶抑制剂敏感性降低最高 <b>${worst.toFixed(1)}%</b>`
     : worst > 0
       ? `敏感性降低比例均 <b>≤ ${worst.toFixed(1)}%</b>`
-      : '所有毒株对神经氨酸酶抑制剂敏感');
+      : reducedCount > 0
+        ? `累计仅 <b>${reducedCount} 株</b>敏感性降低`
+        : '所有毒株对神经氨酸酶抑制剂敏感');
   out.push({ level: worst >= 1 ? 'warn' : 'good', tag:'病原', html: parts.join('；') + '。' });
 
   return out;
@@ -1896,8 +1915,9 @@ function renderVirology(d) {
       <span class="v">${r.reduced === 0 ? '全部敏感' : r.reduced + ' 株敏感性降低' + (r.total ? `（${r.rate}）` : '')}</span>
     </div>`).join('');
 
+  const bRow = (res.rows || []).find(x => x.name.indexOf('B') === 0);
   $('resBadges').innerHTML = `
-    <span class="badge ok">B型：全部对神经氨酸酶抑制剂敏感</span>
+    <span class="badge ${bRow && bRow.reduced > 0 ? 'warn' : 'ok'}">${bRow && bRow.reduced > 0 ? 'B型：' + bRow.reduced + ' 株敏感性降低' : 'B型：全部对神经氨酸酶抑制剂敏感'}</span>
     <span class="badge ok">全部毒株对聚合酶抑制剂敏感</span>`;
 }
 
