@@ -6,33 +6,47 @@
 <title>中国流感监测报告 · 可视化看板</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  /* ==================== 设计基调：国家级专业监测周报 ==================== */
+  /* ==================== 设计基调：国家级专业监测周报 ====================
+     配色原则（两个色域严格分离，杜绝"一色多义"）：
+     ① 结构色域 —— 墨黑 / 纸白 / 暖金。只表达版式层级，不携带任何数据含义。
+        金色 = 章节号、装饰短线、标签框、注释边线等"版式饰件"。
+     ② 数据色域 —— 蓝(南方) 橙(北方) 青(病毒型别) 紫(其它系列)。
+        只出现在图表系列里，同一色永远指同一类数据。
+     ③ 语义色域 —— 朱红=升高/需警惕，青绿=回落/良好，琥珀=需关注，石墨=中性。
+        只用于涨跌数字与研判标签；同色同义，颜色即结论。
+     交互控件沿用蓝色，因其属于"可操作"的界面语汇，与数据无关。 */
   :root{
-    --paper:#f2f5fa;
+    --paper:#f4f6fb;
+    --paper-2:#eef1f8;
     --card:#ffffff;
-    --ink:#12233c;
-    --ink-2:#2c3e58;
-    --muted:#66748c;
-    --line:#e2e8f2;
-    --line-soft:#edf1f7;
-    --brand:#0b57d0;
-    --brand-2:#3b8ff3;
-    --brand-deep:#0a3f9e;
-    --south:#0b57d0;
-    --north:#f2a03d;
-    --pink:#d6408f;
-    --teal:#12a594;
-    --ok:#0e8a6d;
-    --warn:#b5721a;
-    --up:#c94f42;
-    --down:#12a594;
-    --flat:#8a94a8;
-    --radius:14px;
-    --shadow:0 1px 2px rgba(18,45,90,.05), 0 10px 30px rgba(18,45,90,.06);
-    --shadow-hover:0 2px 4px rgba(18,45,90,.06), 0 18px 44px rgba(18,45,90,.11);
-    --shadow-hover-lg:0 3px 6px rgba(18,45,90,.07), 0 26px 60px rgba(11,87,208,.20);
+    --ink:#0e1b30;
+    --ink-2:#2a3a55;
+    --ink-3:#3d4f6e;
+    --muted:#748199;
+    --line:#dde4ef;
+    --line-soft:#eef1f7;
+    --brand:#0a4fd0;
+    --brand-2:#4a93f5;
+    --brand-deep:#083a9c;
+    --south:#0a4fd0;
+    --north:#e9a13a;
+    --pink:#c93a82;
+    --teal:#0fa08e;
+    --ok:#0d8567;
+    --warn:#b1721a;
+    --up:#c4463a;
+    --down:#0fa08e;
+    --flat:#8993a7;
+    --gold:#b8935a;
+    --accent:#a8824a;          /* 结构饰件主色：比 --gold 更沉，压得住纸面 */
+    --accent-soft:#cbb389;
+    --radius:16px;
+    --shadow:0 1px 2px rgba(14,27,48,.04), 0 12px 34px rgba(14,27,48,.055);
+    --shadow-hover:0 2px 4px rgba(14,27,48,.05), 0 22px 52px rgba(14,27,48,.10);
+    --shadow-hover-lg:0 4px 8px rgba(14,27,48,.06), 0 30px 70px rgba(10,79,208,.16);
     --serif:"Noto Serif SC","Source Han Serif SC","STSong","SimSun",serif;
     --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Menlo","Consolas",monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;overflow-anchor:none;background:var(--paper);}
@@ -48,9 +62,15 @@
      后者会把整页背景绑成一张固定的绘制面，滚动时反复重绘，是长页面最典型的滚动卡顿源 */
   body::before{
     content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-    background:linear-gradient(180deg, rgba(11,87,208,.05), rgba(11,87,208,0) 420px);
+    background:linear-gradient(180deg, rgba(10,79,208,.05), rgba(10,79,208,0) 420px);
   }
-  ::selection{background:rgba(11,87,208,.16);}
+  /* 印刷纸张噪点：极淡的 SVG 颗粒，赋予页面"艺术印刷品"的肌理 */
+  body::after{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.1 0 0 0 0 0.2 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;
+  }
+  ::selection{background:rgba(10,79,208,.18);}
   ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-thumb{background:#c7d2e3;border-radius:6px;border:2px solid var(--paper);}
   ::-webkit-scrollbar-thumb:hover{background:#a9bad4;}
@@ -89,7 +109,8 @@
   .hero-top{
     position:absolute;top:0;left:0;right:0;z-index:3;
     display:flex;align-items:center;justify-content:space-between;gap:14px;
-    max-width:1440px;margin:0 auto;padding:20px 20px 0;
+    /* 与标题、数据条使用同一组左右边距，三行文字才能在同一竖线上对齐 */
+    max-width:none;margin:0 auto;padding:22px clamp(24px,4.5vw,88px) 0;
     font-size:12.5px;letter-spacing:1px;color:rgba(255,255,255,.72);
     max-height:60px;overflow:hidden;
     transition:opacity .4s, max-height .4s, padding .4s;
@@ -97,46 +118,77 @@
   .hero-top .en{letter-spacing:2px;text-transform:uppercase;font-size:11px;color:rgba(255,255,255,.48);}
   .hero-inner{
     position:relative;z-index:2;width:100%;
-    display:flex;flex-wrap:wrap;gap:26px;
-    align-items:center;justify-content:space-between;
-    padding:56px 0 40px;
+    display:flex;flex-direction:column;
+    align-items:flex-start;
+    gap:56px;
+    padding:66px 0 0;
     transition:padding .4s;
   }
+  /* Hero 不使用居中窄栏：左右各留 clamp 边距，标题与数据条铺满整屏宽度，
+     版面才舒展；内容仍靠左起排，避免挤在正中。 */
+  .hero .container{
+    max-width:none;
+    padding-left:clamp(24px,4.5vw,88px);
+    padding-right:clamp(24px,4.5vw,88px);
+  }
+  /* 幽灵背景字：海报式超大衬线装饰，落在标题右上方，不压到数据条 */
+  .hero-inner::after{
+    content:"监\0020 测";
+    position:absolute;right:clamp(24px,4.5vw,88px);top:-14px;
+    font-family:var(--serif);font-weight:900;
+    font-size:clamp(120px,16vw,224px);line-height:.9;
+    letter-spacing:.05em;white-space:pre;
+    color:transparent;
+    -webkit-text-stroke:1px rgba(190,220,255,.11);
+    pointer-events:none;user-select:none;
+    transition:opacity .4s;
+  }
   .eyebrow{
-    font-size:12.5px;letter-spacing:3px;text-transform:uppercase;
-    color:rgba(160,205,255,.85);margin-bottom:16px;
-    display:flex;align-items:center;gap:12px;
+    font-size:11px;letter-spacing:.5em;text-transform:uppercase;
+    color:rgba(190,225,255,.75);margin-bottom:0;
+    display:flex;align-items:center;gap:14px;
+    max-height:60px;overflow:hidden;
+    transition:opacity .4s, max-height .4s, margin .4s;
+    font-weight:500;
+  }
+  .eyebrow::before{content:"";width:38px;height:1px;background:linear-gradient(90deg,rgba(190,225,255,.85),rgba(190,225,255,0));}
+  .eyebrow::after{content:"";width:8px;height:8px;border-radius:50%;background:rgba(190,225,255,.55);box-shadow:0 0 12px rgba(140,200,255,.6);}
+  .hero h1{
+    font-family:var(--serif);
+    font-size:clamp(56px,8.5vw,116px);
+    font-weight:900;letter-spacing:.02em;line-height:1.02;
+    color:#f4f8ff;
+    text-shadow:0 2px 30px rgba(4,18,42,.5), 0 0 1px rgba(255,255,255,.3);
+    transition:font-size .4s, letter-spacing .4s, color .4s;
+    position:relative;
+  }
+  /* 标题下方装饰性细线，强化高级感 */
+  .hero h1::after{
+    content:"";display:block;margin-top:26px;width:120px;height:3px;
+    background:linear-gradient(90deg,#e9c98a,rgba(233,201,138,0));
+    transition:width .4s, margin .4s, opacity .4s;
+  }
+  .hero-sub{
+    font-size:14.5px;color:rgba(228,238,255,.72);letter-spacing:.18em;margin-top:0;
+    max-width:640px;line-height:1.9;font-weight:400;
     max-height:60px;overflow:hidden;
     transition:opacity .4s, max-height .4s, margin .4s;
   }
-  .eyebrow::before{content:"";width:34px;height:1px;background:rgba(160,205,255,.6);}
-  .hero h1{
-    font-family:var(--serif);
-    font-size:clamp(42px,5.6vw,76px);
-    font-weight:900;letter-spacing:6px;line-height:1.14;
-    text-shadow:0 2px 24px rgba(6,29,61,.35);
-    transition:font-size .4s, letter-spacing .4s;
-  }
-  .hero-sub{
-    font-size:14px;color:rgba(255,255,255,.72);letter-spacing:1.2px;margin-top:14px;
-    max-height:40px;overflow:hidden;
-    transition:opacity .4s, max-height .4s, margin .4s;
-  }
+  /* 期号数据条：铺满整屏宽，三项左/中/右均布，去掉竖向分隔线，靠间距呼吸 */
   .hero-meta{
-    display:flex;align-items:stretch;gap:0;
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.18);
-    border-radius:16px;
-    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-    padding:18px 8px;
-    transition:padding .4s, background .4s;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:40px;width:100%;
+    background:transparent;
+    border:none;border-radius:0;
+    padding:30px 0 36px;
+    transition:padding .4s, background .4s, border-color .4s;
+    box-shadow:none;
   }
-  .hm{display:flex;flex-direction:column;gap:5px;padding:0 22px;}
-  .hm + .hm{border-left:1px solid rgba(255,255,255,.16);}
-  .hm-k{font-size:11px;letter-spacing:2px;color:rgba(190,215,255,.75);white-space:nowrap;}
-  .hm-v{font-size:19px;font-weight:700;letter-spacing:.5px;white-space:nowrap;font-variant-numeric:tabular-nums;}
-  .hm.issue .hm-v{font-size:15px;font-weight:600;}
-  .hm.period .hm-v{font-size:13.5px;font-weight:500;color:rgba(255,255,255,.88);}
+  .hm{display:flex;flex-direction:column;gap:9px;padding:0;position:relative;margin:0;}
+  .hm + .hm::before{display:none;}
+  .hm-k{font-size:10px;letter-spacing:.4em;color:rgba(190,215,255,.7);white-space:nowrap;text-transform:uppercase;font-weight:600;}
+  .hm-v{font-family:var(--serif);font-size:34px;font-weight:900;letter-spacing:.02em;white-space:nowrap;font-variant-numeric:tabular-nums;color:#f0f6ff;line-height:1;}
+  .hm.issue .hm-v{font-size:34px;font-weight:900;}
+  .hm.period .hm-v{font-family:var(--sans);font-size:15px;font-weight:500;color:rgba(240,246,255,.9);padding-bottom:6px;}
   .issue-badge,.week-badge,.period-badge{
     transition:font-size .4s, padding .4s, letter-spacing .4s;
   }
@@ -157,6 +209,23 @@
     100%{transform:scaleY(0);transform-origin:bottom;}
   }
 
+  /* ---- 首屏入场：封面文字逐行自下托起 ----
+     fill-mode 用 backwards 而不是 both：动画结束后交还给普通样式，
+     body.hero-collapsed 里的 opacity / max-height 收起规则才能照常生效 */
+  @keyframes heroRise{
+    from{opacity:0;transform:translateY(30px);filter:blur(6px);}
+    to{opacity:1;transform:translateY(0);filter:blur(0);}
+  }
+  @keyframes heroMetaIn{
+    from{opacity:0;transform:translateY(22px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .eyebrow{animation:heroRise .9s cubic-bezier(.22,1,.36,1) .06s backwards;}
+  .hero h1{animation:heroRise 1.15s cubic-bezier(.22,1,.36,1) .14s backwards;}
+  .hero-sub{animation:heroRise .95s cubic-bezier(.22,1,.36,1) .24s backwards;}
+  .hero-meta{animation:heroMetaIn .95s cubic-bezier(.22,1,.36,1) .34s backwards;}
+  .hero h1::after{animation:ruleDraw 1.1s cubic-bezier(.6,.05,.2,1) .5s backwards;transform-origin:left center;}
+
   /* ---- 收起态（72px 顶栏）：高度切换由 JS 瞬时完成，此处只管视觉 ---- */
   body.hero-collapsed .hero{
     height:72px;border-radius:0 0 14px 14px;
@@ -164,16 +233,19 @@
   }
   body.hero-collapsed .hero-top{opacity:0;max-height:0;padding-top:0;}
   body.hero-collapsed .hero-scroll{opacity:0;}
-  body.hero-collapsed .hero-inner{padding:10px 0;gap:14px;}
-  body.hero-collapsed .hero h1{font-size:20px;letter-spacing:2px;font-family:var(--sans);font-weight:800;}
+  body.hero-collapsed .hero-inner{padding:10px 0;gap:14px;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+  body.hero-collapsed .hero-inner::after{opacity:0;}
+  body.hero-collapsed .hero h1{font-size:20px;letter-spacing:2px;font-family:var(--sans);font-weight:800;color:#fff;}
+  body.hero-collapsed .hero h1::after{width:0;margin:0;opacity:0;}
   body.hero-collapsed .eyebrow,
   body.hero-collapsed .hero-sub{opacity:0;max-height:0;margin:0;}
-  body.hero-collapsed .hero-meta{background:transparent;border-color:transparent;padding:4px 0;backdrop-filter:none;-webkit-backdrop-filter:none;}
-  body.hero-collapsed .hm{padding:0 14px;gap:2px;}
+  body.hero-collapsed .hero-meta{background:transparent;border-color:transparent;padding:4px 0;width:auto;backdrop-filter:none;-webkit-backdrop-filter:none;}
+  body.hero-collapsed .hm{padding:0 14px;gap:2px;margin-right:0;}
+  body.hero-collapsed .hm + .hm::before{left:0;height:18px;bottom:auto;top:50%;transform:translateY(-50%);}
   body.hero-collapsed .hm-k{font-size:10px;}
-  body.hero-collapsed .hm-v{font-size:13.5px;}
+  body.hero-collapsed .hm-v{font-family:var(--sans);font-size:13.5px;font-weight:700;}
   body.hero-collapsed .hm.issue .hm-v,
-  body.hero-collapsed .hm.period .hm-v{font-size:12px;}
+  body.hero-collapsed .hm.period .hm-v{font-size:12px;padding-bottom:0;}
 
   /* ==================== 吸顶工具栏 ==================== */
   .toolbar{position:sticky;top:12px;z-index:40;margin-top:-30px;margin-bottom:14px;}
@@ -359,173 +431,308 @@
   .range-btn:hover{color:var(--brand);}
   .range-btn.active{background:#fff;color:var(--brand);box-shadow:0 2px 8px rgba(11,87,208,.16);}
 
+  /* ---- 工具栏侧边坞：向下滚过封面后，横条收成右侧竖排小坞 ----
+     只在宽视口启用；且以 body.hero-collapsed（封面已折起）为前提，
+     否则坞会飘在蓝色封面上。.toolbar 保留 min-height 占位，切回横条时正文不跳动。
+     入坞 / 出坞均为两段式：先让旧形态在"自己的位置上"淡出，再让新形态入场。
+     四个相位类由 JS 驱动：bar-leaving（横条淡出）→ docking（坞滑入）、
+     undocking（坞淡出）→ bar-return（横条滑入），因此不存在"瞬移"式的闪现。 */
+  @keyframes dockIn{
+    from{opacity:0;transform:translate(38px,-50%) scale(.94);}
+    to{opacity:1;transform:translate(0,-50%) scale(1);}
+  }
+  @keyframes dockOut{
+    from{opacity:1;transform:translate(0,-50%) scale(1);}
+    to{opacity:0;transform:translate(38px,-50%) scale(.94);}
+  }
+  @keyframes barOut{
+    from{opacity:1;transform:translateY(0) scale(1);}
+    to{opacity:0;transform:translateY(-16px) scale(.985);}
+  }
+  @keyframes barIn{
+    from{opacity:0;transform:translateY(-16px) scale(.985);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  @media (min-width:1180px){
+    body.docked .toolbar{min-height:58px;}
+    body.docked .toolbar-inner{
+      position:fixed;z-index:70;
+      right:8px;top:50%;width:136px;
+      transform:translateY(-50%);
+      flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;
+      gap:9px;padding:11px 10px;border-radius:15px;
+      background:rgba(255,255,255,.96);
+      box-shadow:0 18px 44px rgba(18,45,90,.18), 0 2px 8px rgba(18,45,90,.06);
+    }
+    body.docked .selector{flex-direction:column;align-items:stretch;gap:7px;}
+    body.docked .nav-btn{width:100%;padding:7px 0;font-size:11.5px;text-align:center;border-radius:9px;}
+    body.docked .wk-select{width:100%;min-width:0;max-width:none;}
+    body.docked .wk-trigger{gap:5px;padding:7px 7px;font-size:11px;border-radius:9px;}
+    body.docked .wk-label{font-size:10.5px;letter-spacing:0;font-weight:700;}
+    body.docked .wk-tag,
+    body.docked .wk-issue{display:none;}
+    body.docked .wk-caret{width:9px;height:6px;}
+    body.docked .wk-panel{
+      left:auto;right:calc(100% + 10px);top:0;
+      transform-origin:top right;
+      transform:translateX(10px) scale(.96);
+    }
+    body.docked .wk-select.open .wk-panel{transform:translateX(0) scale(1);}
+    body.docked .range-wrap{
+      flex-direction:column;align-items:stretch;gap:6px;
+      border-top:1px solid var(--line);padding-top:9px;
+    }
+    body.docked .range-label{display:none;}
+    body.docked .range-group{flex-direction:column;width:100%;padding:3px;gap:2px;}
+    body.docked .range-btn{width:100%;padding:5px 0;font-size:10.5px;text-align:center;border-radius:7px;}
+  }
+  /* 相位动画：同为 (0,2,1) 特异性，写在 docked 规则之后才能覆盖。
+     坞的常态（body.docked）不带 animation，只有入坞那一瞬由 docking 播一次，
+     这样中途打断、回滚都不会重播整个动画。 */
+  @media (min-width:1180px){
+    body.bar-leaving .toolbar-inner{animation:barOut .18s cubic-bezier(.4,0,1,1) both;pointer-events:none;}
+    body.docking .toolbar-inner{animation:dockIn .5s cubic-bezier(.22,1,.36,1) both;}
+    body.undocking .toolbar-inner{animation:dockOut .24s cubic-bezier(.5,0,.75,0) both;}
+    body.bar-return .toolbar-inner{animation:barIn .42s cubic-bezier(.22,1,.36,1) both;}
+  }
+
   /* ==================== 正文骨架 ==================== */
   main{padding:14px 0 70px;}
-  .section{margin-bottom:44px;}
+  .section{margin-bottom:84px;position:relative;}
+  /* 海报式章节头：巨型描边编号 + 压线标题。
+     分隔线不再全站一条黑杠 —— 按章节轮转三种版式，避免重复：
+     A 墨线渐隐（实→虚，收在空白里） / B 发丝线 + 左端金刻度块 / C 只留短金线段 */
   .section-title{
-    display:flex;align-items:baseline;gap:14px;
-    margin-bottom:18px;padding-bottom:12px;
-    border-bottom:1px solid var(--line);
+    position:relative;
+    display:flex;align-items:flex-end;gap:0;
+    margin-bottom:34px;padding-bottom:0;
+    min-height:104px;
+  }
+  /* A：主分隔线 */
+  .section-title::after{
+    content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;
+    background:linear-gradient(90deg,var(--ink-2) 0%,var(--ink-2) 46%,rgba(14,27,48,.10) 100%);
+    transform-origin:left center;
+  }
+  /* 短金饰件（默认隐藏，仅 B/C 变体显形） */
+  .section-title::before{
+    content:"";position:absolute;left:0;bottom:-2px;height:5px;width:0;
+    background:var(--accent);
+  }
+  /* B（第 2、5、8…章）：极细长线 + 左端短金刻度 */
+  main > .section:nth-of-type(3n+2) .section-title::after{
+    height:1px;
+    background:linear-gradient(90deg,rgba(14,27,48,.55) 0%,rgba(14,27,48,.55) 38%,rgba(14,27,48,.16) 38%,rgba(14,27,48,.16) 100%);
+  }
+  main > .section:nth-of-type(3n+2) .section-title::before{width:44px;}
+  /* C（第 3、6 章）：不留长线，只落一小段金线，靠留白分隔 */
+  main > .section:nth-of-type(3n) .section-title::after{
+    height:3px;right:auto;width:88px;
+    background:var(--accent);
   }
   .sec-no{
-    font-family:var(--serif);font-size:30px;font-weight:900;line-height:1;
-    color:transparent;-webkit-text-stroke:1px rgba(11,87,208,.45);
-    letter-spacing:1px;flex:none;
+    font-family:var(--serif);font-size:110px;font-weight:900;line-height:.78;
+    color:transparent;-webkit-text-stroke:1.5px rgba(168,130,74,.52);
+    letter-spacing:0;flex:none;margin-bottom:-6px;
+    transition:color .4s ease;
   }
-  .sec-txt{font-size:19px;font-weight:800;letter-spacing:.8px;color:var(--ink);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
-  .sec-en{font-size:10.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
-  .sec-rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);align-self:center;}
+  .sec-txt{font-size:clamp(24px,3vw,34px);font-weight:900;letter-spacing:.04em;color:var(--ink);
+    font-family:var(--serif);
+    display:flex;flex-direction:column;align-items:flex-start;gap:6px;flex-wrap:wrap;
+    margin-left:-38px;padding-bottom:14px;position:relative;z-index:1;}
+  .sec-en{font-size:10px;font-weight:600;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);
+    font-family:var(--sans);}
+  .sec-rule{display:none;}
 
+  /* ==================== 无卡片化：编辑级线框体系 ====================
+     彻底抛弃白卡片盒子，改为「大块留白 + 发丝线 + 巨型衬线数字」的年报风。
+     .card 仅作为透明内容容器，不再有任何背景/边框/阴影/圆角。 */
   .card{
-    background:var(--card);
-    border-radius:var(--radius);padding:24px 26px;
-    border:1px solid var(--line);
-    box-shadow:var(--shadow);
+    background:transparent;
+    border:none;border-radius:0;
+    padding:0;
+    box-shadow:none;
     position:relative;z-index:1;
-    /* 悬停的位移/缩放改用 translate / scale 这两个独立属性：
-       入场动画占用的是 transform，两者各管各的、互不覆盖，
-       因此"滚动入场"与"悬停放大"可以同时进行 */
-    transition:translate .42s cubic-bezier(.22,1,.36,1), scale .42s cubic-bezier(.22,1,.36,1),
-               border-color .42s ease;
+    transition:none;
   }
-  /* 悬停阴影交给独立伪元素做透明度过渡：opacity 走合成层，
-     比直接补间 60px 模糊的 box-shadow 省掉逐帧重绘 */
-  .card::before{
-    content:"";position:absolute;inset:0;border-radius:inherit;
-    box-shadow:var(--shadow-hover-lg);
-    opacity:0;transition:opacity .42s ease;pointer-events:none;z-index:-1;
-  }
-  .card:hover::before{opacity:1;}
-  .card:hover{
-    translate:0 -5px;scale:1.022;
-    border-color:rgba(11,87,208,.34);
-  }
-  .card:active{translate:0 -2px;scale:1.008;}
+  .card::before,.card::after{display:none;}
+  .card:hover,.card:active{translate:none;scale:none;}
   .card-head{display:flex;align-items:center;justify-content:space-between;
-    gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-  .card-head h3{font-size:15px;font-weight:800;letter-spacing:.4px;color:var(--ink);}
-  .tag{font-size:11.5px;color:var(--brand);background:#eaf2ff;
-    padding:3px 11px;border-radius:999px;font-weight:700;letter-spacing:.3px;white-space:nowrap;}
+    gap:10px;margin-bottom:18px;flex-wrap:wrap;padding-bottom:13px;
+    background:linear-gradient(90deg,rgba(14,27,48,.22) 0%,rgba(14,27,48,.22) 58%,rgba(14,27,48,0) 100%)
+       bottom left/100% 1px no-repeat;}
+  .card-head h3{font-size:16px;font-weight:800;letter-spacing:.04em;color:var(--ink);
+    display:flex;align-items:center;gap:12px;}
+  .card-head h3::before{content:"";width:3px;height:15px;background:var(--accent);border-radius:0;}
+  .tag{font-size:11px;color:var(--accent);background:transparent;
+    padding:3px 10px;border-radius:0;font-weight:700;letter-spacing:.08em;white-space:nowrap;
+    border:1px solid rgba(168,130,74,.38);
+    transition:background .25s, color .25s, border-color .25s;}
+  .tag:hover{background:var(--ink);border-color:var(--ink);color:#fff;}
 
-  .grid-2{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;}
-  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-  .grid-2-even{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .grid-2{display:grid;grid-template-columns:1.3fr .95fr;gap:56px;align-items:start;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;align-items:start;}
+  .grid-2-even{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;}
+  /* 海报式错位：第二列整体下坠，打破网格的呆板对齐 */
+  .grid-2 > .card:nth-child(2){margin-top:56px;}
+  .grid-2-even > .card:nth-child(2){margin-top:72px;}
+  .grid-3 > .card:nth-child(2){margin-top:44px;}
+  .grid-3 > .card:nth-child(3){margin-top:88px;}
+  /* 网格内的 card 之间加竖发丝线 */
+  .grid-2 > .card + .card,
+  .grid-3 > .card + .card,
+  .grid-2-even > .card + .card{
+    border-left:1px solid var(--line-soft);
+    padding-left:40px;
+  }
 
-  /* ---- KPI ---- */
-  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+  /* ---- KPI：海报数字墙 ----
+     不再给 5 个指标各配一色（那会让"橙=北方"这类数据语义被稀释）：
+     全部统一为中性，只靠字号与金色序号建立节奏。 */
+  .kpi-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+    background:transparent;
+    border-top:1px solid rgba(14,27,48,.28);
+    border-bottom:none;
+    border-radius:0;
+    overflow:hidden;
+    position:relative;
+  }
   .kpi{
-    background:var(--card);
-    border-radius:var(--radius);padding:18px 20px 16px;
-    border:1px solid var(--line);
-    box-shadow:var(--shadow);
-    position:relative;overflow:hidden;z-index:1;
+    background:transparent;border:none;border-radius:0;
+    padding:28px 24px 24px;
+    box-shadow:none;
+    position:relative;z-index:1;
     cursor:pointer;
-    transition:translate .42s cubic-bezier(.22,1,.36,1), scale .42s cubic-bezier(.22,1,.36,1),
-               transform .22s cubic-bezier(.22,1,.36,1),
-               box-shadow .42s ease, border-color .42s ease;
+    transition:background .3s ease;
   }
+  .kpi + .kpi{border-left:1px solid var(--line);}
+  /* 悬停：整列反白——海报式强对比 */
   .kpi:hover{
-    translate:0 -6px;scale:1.03;
-    /* 倾斜走 transform：入场动画也在 transform 上，用 !important 盖过它
-       （作者 !important 的优先级高于 CSS 动画），这样滚动入场途中悬停依然生效 */
-    transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) !important;
-    box-shadow:var(--shadow-hover-lg);
-    border-color:rgba(11,87,208,.34);
+    background:var(--ink);
+    translate:none;scale:none;transform:none !important;
+    box-shadow:none;border-color:var(--line);
   }
-  .kpi:active{translate:0 -2px;scale:1.014;}
-  .kpi:focus-visible{
-    outline:none;border-color:var(--brand-2);
-    box-shadow:0 0 0 3px rgba(59,143,243,.22), var(--shadow-hover-lg);
+  .kpi:hover .kpi-label,
+  .kpi:hover .kpi-foot{color:rgba(255,255,255,.6);}
+  .kpi:hover .kpi-value{color:#fff;}
+  .kpi:active{translate:none;scale:none;}
+  .kpi:focus-visible{outline:2px solid var(--brand-2);outline-offset:-2px;box-shadow:none;}
+  /* 金色序号：01–05，替代原来的彩色竖条 */
+  .kpi::before{
+    content:attr(data-wm);
+    position:absolute;left:24px;top:26px;
+    font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;
+    color:var(--accent);opacity:.9;
   }
-  /* 可点击角标：悬停/聚焦时出现，提示"点击可跳转到对应章节" */
+  .kpi::after{display:none;}
   .kpi-go{
-    position:absolute;top:9px;right:9px;width:22px;height:22px;
+    position:absolute;top:14px;right:14px;width:20px;height:20px;
     display:flex;align-items:center;justify-content:center;
-    border-radius:8px;font-size:11px;font-weight:800;line-height:1;color:var(--brand);
-    background:#eaf2ff;border:1px solid rgba(11,87,208,.16);
+    font-size:12px;font-weight:800;line-height:1;color:var(--accent);
     opacity:0;transform:translate(-4px,4px);
-    transition:opacity .3s ease, transform .38s cubic-bezier(.22,1,.36,1);
+    transition:opacity .25s ease, transform .3s ease;
   }
-  .kpi:hover .kpi-go,.kpi:focus-visible .kpi-go{opacity:1;transform:translate(0,0);}
-  /* 跳转落点反馈：目标章节的编号短暂"点亮"再淡回描边，确认已到达。
-     注意挂在 .sec-no 上（而非 .section-title），避开入场动画对 animation 简写的覆盖。 */
-  @keyframes secPulse{
-    from{color:rgba(11,87,208,.75);}
-    to{color:transparent;}
-  }
-  .section.sec-arrived .sec-no{animation:secPulse .95s ease-out 1;}
-  .kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
-    background:linear-gradient(90deg,var(--brand),var(--brand-2));}
-  .kpi:nth-child(2)::before{background:linear-gradient(90deg,#f2a03d,#f7c873);}
-  .kpi:nth-child(3)::before{background:linear-gradient(90deg,#12a594,#5eead4);}
-  .kpi:nth-child(4)::before{background:linear-gradient(90deg,#0e8a6d,#7dd3fc);}
-  .kpi:nth-child(5)::before{background:linear-gradient(90deg,#d6408f,#f0a3cd);}
-  .kpi-label{font-size:12px;color:var(--muted);letter-spacing:.5px;font-weight:600;}
-  .kpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
-  .kpi-value{font-size:34px;font-weight:800;letter-spacing:.3px;margin:6px 0 4px;
-    font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15;}
-  /* 8 周迷你趋势：让 KPI 不只是一个孤立数字 */
-  .spark{flex:none;display:block;margin-bottom:8px;overflow:visible;}
-  .kpi-foot{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .kpi:hover .kpi-go{color:#fff;}
+  .kpi:hover .kpi-go,.kpi:focus-visible .kpi-go{opacity:.8;transform:translate(0,0);}
+  .kpi-label{font-size:10px;color:var(--muted);letter-spacing:.24em;font-weight:700;
+    text-transform:uppercase;position:relative;z-index:1;padding-left:26px;}
+  .kpi-row{display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+    margin-top:14px;position:relative;z-index:1;}
+  .kpi-value{font-family:var(--serif);font-size:clamp(46px,4.6vw,62px);font-weight:900;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;color:var(--ink);line-height:1;position:relative;z-index:1;
+    transition:color .3s;}
+  .spark{flex:none;display:block;margin:8px 0 0;overflow:visible;opacity:.7;}
+  .kpi-foot{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;
+    flex-wrap:wrap;margin-top:12px;position:relative;z-index:1;}
   .up{color:var(--up);font-weight:700;}
   .down{color:var(--down);font-weight:700;}
   .flat{color:var(--flat);font-weight:700;}
 
-  /* ---- 本期研判：由数据自动生成的信号 ---- */
-  .signal-card{margin-bottom:18px;}
-  .signal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-  .signal-head h3{font-size:15px;font-weight:800;letter-spacing:.4px;color:var(--ink);}
-  .signal-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
-    color:var(--muted);background:#f4f7fc;border:1px solid var(--line);
-    border-radius:999px;padding:2px 9px;}
+  /* 跳转落点反馈：目标章节的编号短暂"点亮"再淡回描边，确认已到达。 */
+  @keyframes secPulse{
+    0%{color:rgba(168,130,74,.92);}
+    100%{color:transparent;}
+  }
+  .section.sec-arrived .sec-no{animation:secPulse .95s ease-out 1;}
+
+  /* ---- 本期研判：行式信号（无卡片盒） ---- */
+  .signal-card{margin-bottom:8px;}
+  .signal-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .signal-head h3{font-size:16px;font-weight:800;letter-spacing:.04em;color:var(--ink);}
+  .signal-live{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;
+    color:var(--muted);background:transparent;border:1px solid var(--line);
+    border-radius:0;padding:3px 11px;letter-spacing:.08em;}
   .signal-live i{width:6px;height:6px;border-radius:50%;background:var(--ok);
-    box-shadow:0 0 0 2px rgba(14,138,109,.16);}
-  .signal-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .signal{display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:10px;
-    background:#f7f9fd;border:1px solid var(--line-soft);}
-  .sig-tag{flex:none;font-size:11px;font-weight:800;letter-spacing:.4px;line-height:1.6;
-    padding:1px 7px;border-radius:6px;background:#e9eef7;color:#45577a;margin-top:1px;}
-  .sig-txt{font-size:13px;line-height:1.62;color:var(--ink-2);}
+    box-shadow:0 0 0 2px rgba(13,133,103,.18);animation:livePulse 1.8s ease-in-out infinite;}
+  @keyframes livePulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  .signal-list{display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border-top:1px solid var(--line);}
+  .signal{display:flex;gap:12px;align-items:flex-start;padding:14px 18px 14px 0;
+    background:transparent;border:none;border-bottom:1px solid var(--line-soft);
+    border-right:1px solid var(--line-soft);
+    transition:background .25s ease, padding-left .25s ease;}
+  .signal:hover{background:rgba(168,130,74,.05);padding-left:6px;}
+  /* 偶数项去掉右边线，避免网格中出现双竖线 */
+  .signal-list>.signal:nth-child(2n){border-right:none;padding-right:0;padding-left:18px;}
+  .signal-list>.signal:nth-child(2n):hover{padding-left:24px;}
+  /* 色点指示器，替代背景盒 */
+  .signal::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;
+    background:var(--line);margin-top:6px;}
+  .sig-tag{flex:none;font-size:10.5px;font-weight:800;letter-spacing:.08em;line-height:1.6;
+    padding:2px 8px;border-radius:0;background:transparent;color:#45577a;
+    border:1px solid #d6deec;margin-top:1px;}
+  .sig-txt{font-size:13px;line-height:1.7;color:var(--ink-2);}
   .sig-txt b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums;}
-  /* 分级配色：只靠底色与标签色区分，不引入额外图形 */
-  .signal.warn{background:#fdf8ef;border-color:#f3e4cb;}
-  .signal.warn .sig-tag{background:#fbeedb;color:#a5671a;}
-  .signal.good{background:#f2faf7;border-color:#d8efe7;}
-  .signal.good .sig-tag{background:#ddf3ea;color:#0b6f57;}
-  .signal.info{background:#f6f9ff;border-color:#e3ecfa;}
-  .signal.info .sig-tag{background:#e7f0ff;color:var(--brand);}
-  .signal.alert{background:#fdf4f3;border-color:#f6dedb;}
-  .signal.alert .sig-tag{background:#fbe3e0;color:#b03a2e;}
-  .signal-list>.signal:nth-child(5){grid-column:1/-1;}
+  .signal.warn::before{background:#e0a13a;box-shadow:0 0 0 3px rgba(224,161,58,.15);}
+  .signal.warn .sig-tag{border-color:#e9c98a;color:#8a5e16;}
+  .signal.good::before{background:#0fa08e;box-shadow:0 0 0 3px rgba(15,160,142,.15);}
+  .signal.good .sig-tag{border-color:#9dd9cf;color:#0b6f57;}
+  /* 中性信息：不用蓝色（蓝已被"南方数据"占用），改用石墨，避免一色多义 */
+  .signal.info::before{background:#63718a;box-shadow:0 0 0 3px rgba(99,113,138,.14);}
+  .signal.info .sig-tag{border-color:#cfd6e2;color:#4c5a73;}
+  .signal.alert::before{background:#c4463a;box-shadow:0 0 0 3px rgba(196,70,58,.15);}
+  .signal.alert .sig-tag{border-color:#e6b5af;color:#a03328;}
+  .signal-list>.signal:nth-child(5){grid-column:1/-1;border-right:none;padding-right:0;}
 
   /* ---- 摘要 ---- */
-  .summary-list{list-style:none;display:flex;flex-direction:column;gap:14px;counter-reset:sum;}
+  .summary-list{list-style:none;display:flex;flex-direction:column;gap:16px;counter-reset:sum;}
   .summary-list li{
-    position:relative;padding-left:40px;font-size:14.5px;color:var(--ink-2);line-height:1.8;
+    position:relative;padding-left:52px;font-size:14.5px;color:var(--ink-2);line-height:1.85;
     counter-increment:sum;
+    transition:padding-left .3s ease;
   }
+  .summary-list li:hover{padding-left:56px;}
   .summary-list li::before{
     content:counter(sum,decimal-leading-zero);
     position:absolute;left:0;top:2px;
-    font-family:var(--serif);font-size:15px;font-weight:900;color:var(--brand);
-    letter-spacing:.5px;
+    font-family:var(--serif);font-size:16px;font-weight:900;color:var(--accent);
+    letter-spacing:.05em;
+    transition:transform .3s ease;
   }
+  .summary-list li:hover::before{transform:translateX(2px);}
   .summary-list li::after{
-    content:"";position:absolute;left:24px;top:8px;bottom:6px;width:1px;
-    background:var(--line);
+    content:"";position:absolute;left:34px;top:9px;bottom:7px;width:1px;
+    background:linear-gradient(180deg,var(--line),transparent);
   }
 
-  /* ---- 表格 ---- */
+  /* ---- 表格：纯线框财经表 ---- */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;}
-  thead th{background:#f4f7fc;color:#45577a;font-weight:700;text-align:center;
-    padding:11px 8px;border-bottom:1.5px solid var(--line);white-space:nowrap;
-    font-size:12px;letter-spacing:.5px;}
-  tbody td{padding:11px 8px;text-align:center;border-bottom:1px solid var(--line-soft);}
+  thead th{background:transparent;color:var(--ink);font-weight:800;text-align:center;
+    padding:12px 10px;border-bottom:1px solid rgba(14,27,48,.5);white-space:nowrap;
+    font-size:12px;letter-spacing:.06em;position:sticky;top:0;}
+  /* 表头首列压一段金线：给这张表一个"栏目"记号，替代通体黑杠 */
+  thead th:first-child{position:relative;}
+  thead th:first-child::after{
+    content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent);
+  }
+  tbody td{padding:11px 10px;text-align:center;border-bottom:1px solid var(--line-soft);transition:background .2s;}
   tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover{background:#f8faff;}
+  tbody tr:hover td{background:rgba(168,130,74,.055);}
   td.strong{font-weight:700;color:var(--ink);text-align:left;}
-  td.hl{color:var(--brand);font-weight:800;}
+  td.hl{color:var(--ink);font-weight:800;
+    box-shadow:inset 0 -2px 0 -1px rgba(168,130,74,.55);}
   .sub{display:block;font-size:11px;color:var(--muted);font-weight:400;}
 
   /* ---- 图表 ---- */
@@ -534,7 +741,7 @@
   .chart-wrap.lg{height:500px;}
   .chart-wrap::after{
     content:"";position:absolute;inset:-50px;border-radius:32px;
-    background:radial-gradient(circle at 50% 50%, rgba(11,87,208,.07), transparent 65%);
+    background:radial-gradient(circle at 50% 50%, rgba(168,130,74,.07), transparent 65%);
     opacity:0;transition:opacity .9s ease;pointer-events:none;z-index:-1;
   }
   .section.in-view .chart-wrap::after{opacity:1;}
@@ -546,43 +753,50 @@
   .band-legend span{display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums;}
   .band-chip{width:12px;height:9px;border-radius:2px;display:inline-block;border:1px solid;}
 
-  /* ---- 小组件 ---- */
-  .badge-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
-  .badge{font-size:12px;padding:5px 13px;border-radius:999px;font-weight:600;
-    background:#eef4ff;color:var(--brand);border:1px solid #d8e6fc;}
-  .badge.ok{background:#e6f6f1;color:var(--ok);border-color:#c5e9dd;}
-  .badge.warn{background:#fdf1e3;color:var(--warn);border-color:#f6ddba;}
-  .hint{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.75;}
-  .stat-row{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:8px;}
-  .stat{flex:1;min-width:110px;padding:14px 16px;background:#f7f9fd;border:1px solid var(--line-soft);border-radius:12px;}
-  .stat .num{font-size:24px;font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums;line-height:1.2;}
-  .stat .lbl{font-size:11.5px;color:var(--muted);margin-top:2px;letter-spacing:.3px;}
-  .kv-list{display:flex;flex-direction:column;}
-  .kv{display:flex;justify-content:space-between;gap:14px;padding:10px 0;
-    border-bottom:1px dashed var(--line);font-size:13.5px;}
-  .kv:last-child{border-bottom:none;}
-  .kv .k{color:var(--muted);white-space:nowrap;}
-  .kv .v{font-weight:700;text-align:right;color:var(--ink);}
+  /* ---- 小组件：无卡片化 ---- */
+  .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .badge{font-size:11.5px;padding:4px 12px;border-radius:0;font-weight:700;
+    background:transparent;color:var(--accent);border:1px solid rgba(168,130,74,.34);letter-spacing:.04em;}
+  .badge.ok{color:var(--ok);border-color:rgba(13,133,103,.3);}
+  .badge.warn{color:var(--warn);border-color:rgba(177,114,26,.3);}
+  .hint{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.85;padding-left:14px;
+    border-left:2px solid var(--line);}
+  /* 指标条：只留上一条发丝线，底部靠留白收口，避免又一道黑杠 */
+  .stat-row{display:flex;gap:0;flex-wrap:wrap;margin-bottom:8px;
+    border-top:1px solid rgba(14,27,48,.22);}
+  .stat{flex:1;min-width:110px;padding:16px 20px;background:transparent;
+    border:none;border-right:1px solid var(--line-soft);border-radius:0;
+    transition:background .25s ease;}
+  .stat:last-child{border-right:none;}
+  .stat:hover{background:rgba(168,130,74,.045);transform:none;box-shadow:none;}
+  .stat .num{font-family:var(--serif);font-size:28px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15;}
+  .stat .lbl{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.08em;font-weight:600;text-transform:uppercase;}
+  .kv-list{display:flex;flex-direction:column;border-top:1px solid var(--line);}
+  .kv{display:flex;justify-content:space-between;gap:14px;padding:11px 0;
+    border-bottom:1px solid var(--line-soft);font-size:13.5px;transition:padding-left .25s ease;}
+  .kv:hover{padding-left:6px;}
+  .kv:last-child{border-bottom:1px solid var(--line);}
+  .kv .k{color:var(--muted);white-space:nowrap;letter-spacing:.03em;}
+  .kv .v{font-weight:700;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums;}
   .note-box{
-    background:linear-gradient(135deg,#f5f9ff,#eef4fd);
-    border-left:4px solid var(--brand-2);border-radius:0 12px 12px 0;
-    padding:14px 17px;font-size:13.5px;color:#33456a;line-height:1.85;
-  }
+    background:transparent;
+    border-left:3px solid var(--accent);border-radius:0;
+    padding:12px 18px;font-size:13.5px;color:var(--ink-2);line-height:1.85;
+    box-shadow:none;margin:0;}
   .current-week{
-    display:inline-flex;align-items:center;gap:8px;
-    background:#eef4ff;border:1px solid #d3e2fa;
+    display:inline-flex;align-items:center;gap:9px;
+    background:transparent;border:1px solid var(--line);
     color:var(--brand);font-size:12.5px;font-weight:600;
-    padding:6px 14px;border-radius:999px;margin-bottom:14px;
-  }
-  .current-week strong{font-size:13.5px;letter-spacing:.3px;font-weight:800;}
+    padding:5px 14px;border-radius:0;margin-bottom:14px;letter-spacing:.03em;}
+  .current-week strong{font-size:13.5px;letter-spacing:.03em;font-weight:800;}
   .cw-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);
-    box-shadow:0 0 0 4px rgba(11,87,208,.16);animation:pulse 2s infinite;}
+    box-shadow:0 0 0 4px rgba(10,79,208,.16);animation:pulse 2s infinite;}
   @keyframes pulse{
-    0%,100%{box-shadow:0 0 0 4px rgba(11,87,208,.16);}
-    50%{box-shadow:0 0 0 7px rgba(11,87,208,.06);}
+    0%,100%{box-shadow:0 0 0 4px rgba(10,79,208,.16);}
+    50%{box-shadow:0 0 0 7px rgba(10,79,208,.06);}
   }
-  .term{border-bottom:1px dashed rgba(11,87,208,.45);cursor:help;transition:.18s;}
-  .term:hover{border-bottom-color:var(--brand);color:var(--brand);}
+  .term{border-bottom:1px dashed rgba(168,130,74,.5);cursor:help;transition:.18s;}
+  .term:hover{border-bottom-color:var(--accent);color:#7d5f2e;}
 
   /* ---- 术语提示框 ---- */
   #termTooltip{
@@ -628,29 +842,87 @@
 
   /* ==================== 入场动效（与 JS 观察器配合，只播一次） ====================
      :not(.revealed) —— 入场播完 JS 会打上 revealed，此后重渲染（换期数/换区间）
-     不会再重播动画，也不会让动画继续占用 transform */
+     不会再重播动画，也不会让动画继续占用 transform。
+     章节切换编排：底线自左向右"画出" → 巨型编号带模糊升起 →
+     标题文字从左侧擦入、字距收紧 → 内容按章节奇偶左右交替进场 */
   .section.in-view:not(.revealed) .section-title{animation:titleIn .8s cubic-bezier(.22,1,.36,1) both;}
-  .section.in-view:not(.revealed) .card,
-  .section.in-view:not(.revealed) .kpi{animation:cardIn .8s cubic-bezier(.22,1,.36,1) backwards;}
-  .section.in-view:not(.revealed) .card:nth-child(2){animation-delay:.10s;}
-  .section.in-view:not(.revealed) .card:nth-child(3){animation-delay:.20s;}
-  .section.in-view:not(.revealed) .kpi:nth-child(1){animation-delay:.02s;}
-  .section.in-view:not(.revealed) .kpi:nth-child(2){animation-delay:.08s;}
-  .section.in-view:not(.revealed) .kpi:nth-child(3){animation-delay:.14s;}
-  .section.in-view:not(.revealed) .kpi:nth-child(4){animation-delay:.20s;}
-  .section.in-view:not(.revealed) .kpi:nth-child(5){animation-delay:.26s;}
-  @keyframes titleIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .section.in-view:not(.revealed) .section-title::after{
+    animation:ruleDraw 1s cubic-bezier(.6,.05,.2,1) .15s backwards;
+  }
+  .section.in-view:not(.revealed) .sec-no{
+    animation:noRise 1s cubic-bezier(.22,1,.36,1) backwards;
+  }
+  .section.in-view:not(.revealed) .sec-txt{
+    animation:txtWipe .9s cubic-bezier(.22,1,.36,1) .22s backwards;
+  }
+  .section.in-view:not(.revealed) .sec-en{
+    animation:enTrack 1.1s cubic-bezier(.22,1,.36,1) .35s backwards;
+  }
+  /* ---- 内容块逐个入场 ----
+     卡片/指标不再由"整章"统一播放：JS 在元素进入视口之前 180px 就给它打上 rv-in，
+     动画起始态因此永远发生在屏幕外，不会出现"先看见原内容、快出现时再闪回重播"。
+     奇偶左右交替与上下方向由 rv-right / rv-up 两个类决定。
+     fill-mode 用 backwards（不用 both）：动画播完后交还给普通样式，
+     元素不会永久带着 transform / filter 的合成层，也便于悬停反馈正常接管。 */
+  .rv{opacity:0;}
+  .rv.rv-in{opacity:1;animation:cardInL .85s cubic-bezier(.22,1,.36,1) backwards;}
+  .rv.rv-in.rv-right{animation-name:cardInR;}
+  .rv.rv-in.rv-up{animation-name:cardInL2;}
+  .rv.rv-in.rv-right.rv-up{animation-name:cardInR2;}
+
+  /* ---- 反向（自下而上回看）----
+     向上滚动回到看过的章节时，标题整套动效镜像：线自右向左收回、编号自上方落下、
+     文字自右侧擦入 —— 像把版面"倒着翻回去"，而不是简单复制正向效果。 */
+  .section.in-view.dir-up:not(.revealed) .section-title::after{transform-origin:right center;}
+  .section.in-view.dir-up:not(.revealed) .section-title::before{transform-origin:right center;}
+  .section.in-view.dir-up:not(.revealed) .sec-no{animation-name:noDrop;}
+  .section.in-view.dir-up:not(.revealed) .sec-txt{animation-name:txtWipeR;}
+  @keyframes titleIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes ruleDraw{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes noRise{
+    from{opacity:0;transform:translateY(52px);filter:blur(8px);}
+    to{opacity:1;transform:translateY(0);filter:blur(0);}
+  }
+  @keyframes txtWipe{
+    from{opacity:0;transform:translateX(-30px);filter:blur(5px);}
+    to{opacity:1;transform:translateX(0);filter:blur(0);}
+  }
+  @keyframes enTrack{
+    from{opacity:0;letter-spacing:.7em;}
+    to{opacity:1;letter-spacing:.34em;}
+  }
+  @keyframes cardInL{from{opacity:0;transform:translate(-34px,18px);filter:blur(3px);}to{opacity:1;transform:translate(0,0);filter:blur(0);}}
+  @keyframes cardInR{from{opacity:0;transform:translate(34px,18px);filter:blur(3px);}to{opacity:1;transform:translate(0,0);filter:blur(0);}}
+  /* 反向进场：纵向来向翻转为"自上而下"，横向来向镜像 */
+  @keyframes noDrop{
+    from{opacity:0;transform:translateY(-46px);filter:blur(8px);}
+    to{opacity:1;transform:translateY(0);filter:blur(0);}
+  }
+  @keyframes txtWipeR{
+    from{opacity:0;transform:translateX(30px);filter:blur(5px);}
+    to{opacity:1;transform:translateX(0);filter:blur(0);}
+  }
+  @keyframes cardInL2{from{opacity:0;transform:translate(-34px,-18px);filter:blur(3px);}to{opacity:1;transform:translate(0,0);filter:blur(0);}}
+  @keyframes cardInR2{from{opacity:0;transform:translate(34px,-18px);filter:blur(3px);}to{opacity:1;transform:translate(0,0);filter:blur(0);}}
 
   @media (prefers-reduced-motion: reduce){
     .hero, .hero-inner, .hero h1, .eyebrow, .hero-sub{transition:none;}
+    .eyebrow,.hero h1,.hero-sub,.hero-meta,.hero h1::after,
+    body.docked .toolbar-inner, body.docking .toolbar-inner,
+    body.undocking .toolbar-inner, body.bar-leaving .toolbar-inner,
+    body.bar-return .toolbar-inner{animation:none !important;}
     /* 保留阴影/描边的悬停反馈，仅去掉位移与倾斜 */
     .card:hover,.kpi:hover{translate:none;scale:none;transform:none !important;}
     .kpi-go{transition:none;transform:none;}
     .section.sec-arrived .sec-no{animation:none;}
     .section.in-view:not(.revealed) .section-title,
-    .section.in-view:not(.revealed) .card,
-    .section.in-view:not(.revealed) .kpi{animation:none;}
+    .section.in-view:not(.revealed) .section-title::after,
+    .section.in-view:not(.revealed) .sec-no,
+    .section.in-view:not(.revealed) .sec-txt,
+    .section.in-view:not(.revealed) .sec-en{animation:none;}
+    .rv,.rv.rv-in{opacity:1;animation:none !important;}
+    .section.in-view.dir-up:not(.revealed) .sec-no,
+    .section.in-view.dir-up:not(.revealed) .sec-txt{animation:none;}
     .hero::before,.hero::after{transition:none;}
     .hero-scroll span{animation:none;}
     /* 期数选择器：关闭全部动效，仅保留状态切换 */
@@ -704,17 +976,21 @@
     .hero{height:auto;min-height:0;padding:0;border-radius:0 0 20px 20px;}
     .hero-top{position:static;padding:16px 14px 0;font-size:11px;}
     .hero-top .en{display:none;}
-    .hero-inner{padding:26px 0 20px;gap:16px;}
-    .eyebrow{font-size:10px;letter-spacing:2px;margin-bottom:10px;}
+    .hero-inner{padding:30px 0 0;gap:18px;}
+    .hero-inner::after{font-size:96px;right:-0.5rem;}
+    .eyebrow{font-size:9.5px;letter-spacing:.24em;margin-bottom:0;gap:10px;}
     .eyebrow::before{width:22px;}
-    .hero h1{font-size:30px;letter-spacing:3px;}
-    .hero-sub{font-size:11.5px;margin-top:8px;letter-spacing:.5px;}
-    .hero-meta{width:100%;padding:12px 4px;border-radius:12px;}
-    .hm{padding:0 12px;gap:3px;flex:1;}
-    .hm-k{font-size:9.5px;letter-spacing:1px;}
-    .hm-v{font-size:13px;}
-    .hm.issue .hm-v{font-size:12px;}
-    .hm.period .hm-v{font-size:10.5px;white-space:normal;}
+    .eyebrow::after{width:6px;height:6px;}
+    .hero h1{font-size:36px;letter-spacing:.02em;}
+    .hero h1::after{margin-top:14px;width:56px;}
+    .hero-sub{font-size:11.5px;margin-top:0;letter-spacing:.08em;line-height:1.75;}
+    .hero-meta{width:100%;padding:14px 0 18px;flex-wrap:wrap;gap:10px 0;}
+    .hm{padding:0 20px 0 0;gap:4px;margin-right:20px;}
+    .hm + .hm::before{left:-20px;height:34px;}
+    .hm-k{font-size:9px;letter-spacing:.24em;}
+    .hm-v{font-size:20px;}
+    .hm.issue .hm-v{font-size:20px;}
+    .hm.period .hm-v{font-size:11px;white-space:normal;padding-bottom:2px;}
     .hero-scroll{display:none;}
     body.hero-collapsed .hero-inner{padding:10px 0;}
     body.hero-collapsed .hero h1{font-size:16px;}
@@ -730,38 +1006,53 @@
     .range-group{padding:2px;border-radius:10px;}
     .range-btn{padding:6px 10px;font-size:11.5px;border-radius:8px;}
     main{padding:10px 0 44px;}
-    .section{margin-bottom:28px;}
-    .section-title{gap:10px;margin-bottom:12px;padding-bottom:9px;}
-    .sec-no{font-size:22px;}
-    .sec-txt{font-size:15.5px;gap:7px;}
-    .sec-en{font-size:9px;letter-spacing:1.5px;}
-    .card{padding:15px 15px;border-radius:13px;}
-    /* 触屏没有真正的 hover，点按后 :hover 会"粘住"，这里一并复位位移/缩放 */
-    .card:hover{translate:none;scale:none;box-shadow:var(--shadow);border-color:var(--line);}
-    .card-head{margin-bottom:11px;gap:8px;}
-    .card-head h3{font-size:13.5px;}
-    .tag{font-size:10.5px;padding:2px 9px;}
-    .grid-2,.grid-2-even,.grid-3{grid-template-columns:1fr;gap:12px;}
-    .kpi-grid{grid-template-columns:1fr 1fr;gap:10px;}
-    .kpi{padding:13px 13px 11px;border-radius:12px;}
-    .kpi:hover{translate:none;scale:none;transform:none !important;
-      box-shadow:var(--shadow);border-color:var(--line);}
-    /* 触屏无 hover：角标常驻低透明度，保留"可点击"的提示 */
-    .kpi-go{width:18px;height:18px;font-size:10px;top:6px;right:6px;border-radius:6px;
-      opacity:.6;transform:none;}
-    .kpi-label{font-size:10.5px;}
-    .kpi-value{font-size:22px;margin:4px 0 3px;}
-    .spark{width:56px;height:22px;margin-bottom:5px;}
-    .kpi-foot{font-size:10px;gap:4px;}
+    .section{margin-bottom:44px;}
+    .section-title{gap:0;margin-bottom:20px;min-height:64px;}
+    .sec-no{font-size:58px;-webkit-text-stroke-width:1px;margin-bottom:-4px;}
+    .sec-txt{font-size:20px;gap:4px;margin-left:-22px;padding-bottom:8px;}
+    .sec-en{font-size:8.5px;letter-spacing:.2em;}
+    .card{padding:0;}
+    .card-head{margin-bottom:12px;gap:8px;padding-bottom:10px;}
+    .card-head h3{font-size:14px;gap:8px;}
+    .card-head h3::before{height:13px;}
+    .tag{font-size:10.5px;padding:2px 8px;}
+    .grid-2,.grid-2-even,.grid-3{grid-template-columns:1fr;gap:28px;}
+    /* 单列时去掉竖线分隔与错位 */
+    .grid-2 > .card:nth-child(2),
+    .grid-2-even > .card:nth-child(2),
+    .grid-3 > .card:nth-child(2),
+    .grid-3 > .card:nth-child(3){margin-top:0;}
+    .grid-2 > .card + .card,
+    .grid-3 > .card + .card,
+    .grid-2-even > .card + .card{border-left:none;padding-left:0;}
+    .kpi-grid{grid-template-columns:repeat(2,1fr);border-radius:0;}
+    .kpi{padding:16px 14px 14px;}
+    .kpi::before{left:14px;top:15px;font-size:9px;}
+    .kpi-label{padding-left:22px;}
+    .kpi + .kpi{border-left:1px solid var(--line);}
+    /* 第3个起换行，去掉左边线避免重复 */
+    .kpi:nth-child(3){border-left:none;border-top:1px solid var(--line);}
+    .kpi:nth-child(4){border-top:1px solid var(--line);}
+    .kpi:nth-child(5){border-top:1px solid var(--line);border-left:none;grid-column:1/-1;}
+    .kpi-go{width:18px;height:18px;font-size:10px;top:10px;right:10px;opacity:.6;transform:none;}
+    .kpi-label{font-size:9.5px;letter-spacing:.12em;}
+    .kpi-value{font-size:26px;}
+    .kpi-row{margin-top:8px;}
+    .spark{width:50px;height:20px;margin-top:6px;}
+    .kpi-foot{font-size:10px;gap:4px;margin-top:6px;}
     .signal-head{margin-bottom:11px;gap:8px;}
-    .signal-head h3{font-size:13.5px;}
-    .signal-list{grid-template-columns:1fr;gap:8px;}
+    .signal-head h3{font-size:14px;}
+    .signal-list{grid-template-columns:1fr;}
     .signal-list>.signal:nth-child(5){grid-column:auto;}
-    .signal{padding:10px 11px;}
+    .signal{padding:12px 0;border-right:none;}
+    .signal-list>.signal:nth-child(2n){padding-left:0;}
+    .signal-list>.signal:nth-child(2n):hover{padding-left:6px;}
     .sig-txt{font-size:12.5px;}
     .summary-list{gap:11px;}
-    .summary-list li{font-size:13px;padding-left:34px;line-height:1.75;}
+    .summary-list li{font-size:13px;padding-left:38px;line-height:1.75;}
+    .summary-list li:hover{padding-left:38px;}
     .summary-list li::before{font-size:13px;}
+    .summary-list li::after{left:26px;}
     .chart-wrap{height:280px;}
     .chart-wrap.sm{height:240px;}
     .chart-wrap.lg{height:320px;}
@@ -772,16 +1063,17 @@
     tbody td{padding:9px 6px;}
     td.strong{font-size:12px;}
     .sub{font-size:10px;}
-    .stat-row{gap:10px;}
-    .stat{flex:1 1 calc(50% - 5px);min-width:0;padding:10px 12px;}
-    .stat .num{font-size:18px;}
-    .stat .lbl{font-size:10.5px;}
+    .stat-row{gap:0;}
+    .stat{flex:1 1 50%;min-width:0;padding:12px 14px;border-right:1px solid var(--line-soft);}
+    .stat:nth-child(2n){border-right:none;}
+    .stat .num{font-size:20px;}
+    .stat .lbl{font-size:10px;}
     .kv{padding:9px 0;font-size:12.5px;gap:10px;flex-wrap:wrap;}
     .kv .k{font-size:11.5px;}
     .kv .v{font-size:12.5px;max-width:62%;word-break:break-word;}
     .kv .sub{font-size:10px;}
-    .note-box{padding:11px 13px;font-size:12.5px;line-height:1.75;border-radius:0 10px 10px 0;border-left-width:3px;}
-    .hint{font-size:11px;margin-top:9px;line-height:1.7;}
+    .note-box{padding:10px 14px;font-size:12.5px;line-height:1.75;border-left-width:3px;}
+    .hint{font-size:11px;margin-top:10px;line-height:1.7;}
     .badge-row{gap:6px;margin-top:10px;}
     .badge{font-size:10.5px;padding:4px 10px;}
     .current-week{font-size:11.5px;padding:5px 11px;margin-bottom:10px;}
@@ -793,10 +1085,13 @@
   @media (max-width:380px){
     .container{padding:0 10px;}
     .hero{border-radius:0 0 16px 16px;}
-    .hero h1{font-size:24px;letter-spacing:2px;}
+    .hero h1{font-size:26px;letter-spacing:.02em;}
+    .hero h1::after{width:36px;margin-top:12px;}
     .hero-sub{font-size:10.5px;}
-    .hm{padding:0 8px;}
-    .hm-v{font-size:11.5px;}
+    .hm{padding:0 12px 0 0;margin-right:12px;}
+    .hm + .hm::before{left:-12px;}
+    .hm-v{font-size:16px;}
+    .hm.issue .hm-v{font-size:16px;}
     .toolbar-inner{padding:7px 8px;gap:6px;}
     .nav-btn{padding:7px 8px;font-size:11px;}
     .wk-trigger{font-size:11.5px;padding:6px 8px;gap:6px;}
@@ -809,16 +1104,20 @@
     .range-wrap{gap:6px;}
     .kpi-grid{gap:8px;}
     .kpi{padding:11px 10px 9px;}
-    .kpi-value{font-size:19px;}
+    .kpi::before{left:10px;top:11px;font-size:8.5px;}
+    .kpi-label{padding-left:19px;}
+    .kpi-value{font-size:24px;}
     .kpi-foot{font-size:9.5px;}
-    .card{padding:12px 12px;border-radius:11px;}
+    .card{padding:0;}
     .card-head h3{font-size:12.5px;}
     .chart-wrap{height:230px;}
     .chart-wrap.sm{height:200px;}
     .chart-wrap.lg{height:260px;}
-    .sec-txt{font-size:14px;}
-    .sec-no{font-size:19px;}
+    .sec-txt{font-size:17px;margin-left:-16px;}
+    .sec-no{font-size:44px;}
     .summary-list li{font-size:12.5px;padding-left:30px;}
+    .summary-list li:hover{padding-left:30px;}
+    .summary-list li::after{left:20px;}
     .kv{font-size:11.5px;}
     .kv .v{font-size:11.5px;max-width:65%;}
   }
@@ -1495,8 +1794,11 @@ function deltaCount(cur, prev) {
   return `<span class="flat">→ 持平</span>`;
 }
 /* 8 周迷你趋势线：内联 SVG，不额外创建 Chart 实例 */
-function sparkline(vals, color, idx) {
+function sparkline(vals, idx) {
   if (!vals || vals.length < 2) return '';
+  // 迷你趋势线只表达"形状"，不再用五色区分指标：
+  // 颜色已被数据系列与语义占用，这里再用一色只会让同一色多义。统一用结构金。
+  const color = '#a8824a';
   const w = 68, h = 26, pad = 3;
   const min = Math.min(...vals), max = Math.max(...vals);
   const span = (max - min) || 1;
@@ -1613,35 +1915,35 @@ function renderKPI(d) {
       label:'南方省份 <span class="term" data-term="ILI%">ILI%</span>',
       value:s.value.toFixed(1)+'%',
       foot:`较前一周 ${deltaHtml(s.value, s.prev)}　较2025同期 ${deltaHtml(s.value, s.ref.y2025)}`,
-      spark:spark(w => w.ili.south.value), color:'#0b57d0' },
+      spark:spark(w => w.ili.south.value) },
     { target:'sec-ili', name:'北方省份 ILI%',
       label:'北方省份 <span class="term" data-term="ILI%">ILI%</span>',
       value:n.value.toFixed(1)+'%',
       foot:`较前一周 ${deltaHtml(n.value, n.prev)}　较2025同期 ${deltaHtml(n.value, n.ref.y2025)}`,
-      spark:spark(w => w.ili.north.value), color:'#f2a03d' },
+      spark:spark(w => w.ili.north.value) },
     { target:'sec-patho', name:'南方流感病毒阳性率',
       label:'南方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>',
       value:sRate.toFixed(1)+'%', foot:rateFoot(sRate, sPrevRate),
-      spark:spark(w => rate(w.lab.south.positive, w.lab.south.tested)), color:'#12a594' },
+      spark:spark(w => rate(w.lab.south.positive, w.lab.south.tested)) },
     { target:'sec-patho', name:'北方流感病毒阳性率',
       label:'北方<span class="term" data-term="流感病毒阳性率">流感病毒阳性率</span>',
       value:nRate.toFixed(1)+'%', foot:rateFoot(nRate, nPrevRate),
-      spark:spark(w => rate(w.lab.north.positive, w.lab.north.tested)), color:'#0e8a6d' },
+      spark:spark(w => rate(w.lab.north.positive, w.lab.north.tested)) },
     { target:'sec-outbreak', name:'本周暴发疫情',
       label:'本周<span class="term" data-term="暴发疫情">暴发疫情</span>',
       value:fmt(d.outbreaks.week)+' 起',
       foot:`本季累计 ${fmt(d.outbreaks.total)} 起　较上季同期 ${deltaCount(d.outbreaks.total, lastSeason)}`,
-      spark:spark(w => w.outbreaks.week), color:'#d6408f' }
+      spark:spark(w => w.outbreaks.week) }
   ];
 
   $('kpiGrid').innerHTML = cards.map((c, i) => `
-    <div class="kpi" data-target="${c.target}" role="button" tabindex="0"
+    <div class="kpi" data-target="${c.target}" data-wm="${String(i+1).padStart(2,'0')}" role="button" tabindex="0"
       aria-label="${c.name}，点击查看对应章节" title="点击查看对应章节">
       <div class="kpi-go" aria-hidden="true">→</div>
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-row">
         <div class="kpi-value">${c.value}</div>
-        ${sparkline(c.spark, c.color, i)}
+        ${sparkline(c.spark, i)}
       </div>
       <div class="kpi-foot">${c.foot}</div>
     </div>`).join('');
@@ -2529,27 +2831,159 @@ const GLOSSARY = {
   });
 })();
 
-/* ============== 3. Section 进入视口时入场（只播一次，避免闪烁） ============== */
-(function initSectionReveal(){
-  const sections = document.querySelectorAll('.section');
-  if (!sections.length) return;
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const sec = e.target;
-      sec.classList.add('in-view');
-      obs.unobserve(sec);   // 只触发一次，避免反复重播动画
-      // 动画播完（0.8s + 最多 0.26s 交错延迟）后打上 revealed：
-      // 之后换期数/换区间重渲染时不再重播，动画也不再占用 transform
-      setTimeout(() => sec.classList.add('revealed'), 1200);
+/* ============== 3. 入场动效：逐元素 + 180px 提前量 ==============
+   过去按"整章"在章节已进入视口时才重播：肉眼会先看到完整内容，
+   等快完全出现时再闪回起始态重播一次。现在拆成两层：
+   ① 章节标题（编号 / 英文 / 分隔线）仍由 section 上的 in-view + dir-up 编排；
+   ② 每张卡片、每个指标独立播放，进入视口前 180px 就在屏幕外起播，
+      因此任何一次播放的起始态都不会被看见。
+   重新武装（让下一次还能播）只在元素离开视口 180px 之外发生，同样不可见。 */
+(function initReveal(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (reduce.matches) return;             // 降级：内容保持静态可见
+
+  const LOOK = 180;                       // 提前量（px）
+
+  /* ---- 标题：章节级编排 ---- */
+  const titles = Array.from(document.querySelectorAll('.section')).map(sec => ({
+    sec, title: sec.querySelector('.section-title') || sec,
+    armedDown: true, armedUp: false, last: 0, timer: 0
+  }));
+
+  function playTitle(row, up){
+    const now = performance.now();
+    if (now - row.last < 700) return;     // 冷却
+    row.last = now;
+    const sec = row.sec;
+    sec.classList.toggle('dir-up', up);
+    sec.classList.remove('revealed');
+    void sec.getBoundingClientRect();     // 强制回流，动画从 0 重播
+    sec.classList.add('in-view');
+    clearTimeout(row.timer);
+    row.timer = setTimeout(() => sec.classList.add('revealed'), 1700);
+  }
+
+  /* ---- 卡片 / 指标：逐个独立 ---- */
+  const items = [];
+  document.querySelectorAll('.section').forEach(sec => {
+    let order = 0;
+    sec.querySelectorAll('.card, .kpi').forEach(el => {
+      el.classList.add('rv');
+      items.push({
+        el,
+        right: order % 2 === 1,                     // 左右交替
+        delay: Math.min(order, 4) * 0.06,           // 同排错峰
+        last: 0
+      });
+      order++;
     });
-  }, {
-    threshold: 0,
-    // 上下各外扩 120px：在 section 还是"完全在视口外"时就加上 in-view，
-    // 动画的起始态（opacity:0）在看不见的地方生效 —— 否则先可见再变透明就是闪烁
-    rootMargin: '120px 0px 120px 0px'
   });
-  sections.forEach(s => obs.observe(s));
+
+  function playItem(it, up){
+    const now = performance.now();
+    if (now - it.last < 500) return;
+    it.last = now;
+    const el = it.el;
+    el.classList.toggle('rv-right', it.right);
+    el.classList.toggle('rv-up', up);
+    el.style.animationDelay = it.delay.toFixed(2) + 's';
+    el.classList.add('rv-in');
+  }
+
+  function resetItem(it){
+    it.el.classList.remove('rv-in');      // 只会在屏幕外调用
+  }
+
+  let dirDown = true, prevY = window.scrollY, ticking = false;
+
+  function frame(){
+    ticking = false;
+    const vh = window.innerHeight;
+    const y = window.scrollY;
+    if (Math.abs(y - prevY) > 2) dirDown = y > prevY;
+    prevY = y;
+
+    const downAt = vh + LOOK;             // 向下：提前 180px 起播
+    const upAt = -LOOK;                   // 向上：提前 180px 起播
+
+    for (const row of titles){
+      const r = row.title.getBoundingClientRect();
+      if (dirDown){
+        if (r.top > downAt + LOOK) row.armedDown = true;
+        else if (row.armedDown && r.top <= downAt && r.bottom > 0){
+          row.armedDown = false;
+          playTitle(row, false);
+        }
+      } else {
+        if (r.bottom < upAt - LOOK) row.armedUp = true;
+        else if (row.armedUp && r.bottom >= upAt && r.top < vh){
+          row.armedUp = false;
+          playTitle(row, true);
+        }
+      }
+    }
+
+    for (const it of items){
+      const r = it.el.getBoundingClientRect();
+      const live = it.el.classList.contains('rv-in');
+      if (r.top > vh + LOOK * 2 || r.bottom < -LOOK * 2){
+        if (live) resetItem(it);          // 已完全离开视口，复位等下次
+        continue;
+      }
+      if (!live && dirDown && r.top <= downAt && r.bottom > 0) playItem(it, false);
+      else if (!live && !dirDown && r.bottom >= upAt && r.top < vh) playItem(it, true);
+    }
+  }
+
+  // 首屏：已经在视口里的元素立即演一次（从屏幕外开始不成立，直接播一次入场）
+  function prime(){
+    const vh = window.innerHeight;
+    items.forEach(it => {
+      const r = it.el.getBoundingClientRect();
+      if (r.top < vh && r.bottom > 0) playItem(it, false);
+    });
+    titles.forEach(row => {
+      const r = row.title.getBoundingClientRect();
+      row.armedDown = r.top > vh + LOOK;
+      row.armedUp = r.bottom < -LOOK * 2;
+      if (r.top < vh && r.bottom > 0) playTitle(row, false);
+    });
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking){ ticking = true; requestAnimationFrame(frame); }
+  }, { passive: true });
+  window.addEventListener('resize', () => { prevY = window.scrollY; }, { passive: true });
+
+  prime();
+})();
+
+/* ============== 3.0.1 章节编号滚动视差 ==============
+   巨型描边编号相对内容"慢半拍"：滚动时按章节中心与视口中心的距离
+   给 sec-no 一个反向小位移，营造前后景纵深。rAF 节流 + 视口外跳过，
+   只对 translateY 写内联样式，走合成层，不触发重排。 */
+(function initSecNoParallax(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(max-width: 900px)').matches) return; // 移动端省掉
+  const nos = Array.from(document.querySelectorAll('.sec-no'));
+  if (!nos.length) return;
+  let ticking = false;
+  function update(){
+    ticking = false;
+    const vh = window.innerHeight;
+    for (const el of nos){
+      const r = el.getBoundingClientRect();
+      if (r.bottom < -80 || r.top > vh + 80) continue;
+      // 章节中心偏离视口中心越远，编号反向漂移越多（上限 ±34px）
+      const d = (r.top + r.height / 2) - vh / 2;
+      const y = Math.max(-34, Math.min(34, d * 0.055));
+      el.style.translate = `0 ${y.toFixed(1)}px`;
+    }
+  }
+  document.addEventListener('scroll', () => {
+    if (!ticking) ticking = requestAnimationFrame(update);
+  }, { passive: true });
+  update();
 })();
 
 /* ============== 3.1 KPI 卡片 3D 倾斜 ==============
@@ -2770,6 +3204,108 @@ const GLOSSARY = {
   };
 
   update();
+})();
+
+/* ============== 7. 工具栏侧边坞 ==============
+   封面折起（body.hero-collapsed）且已滚入正文后，顶部横条收成右侧竖排小坞；
+   回到封面顶部时恢复横条。与 hero 收起状态共用判定，坞不会飘在蓝色封面上。
+   监听注册在 hero 之后，同一帧内先更新 hero 状态、再决定是否入坞。 */
+(function initToolbarDock(){
+  if (!document.querySelector('.toolbar-inner')) return;
+  const mq     = window.matchMedia('(min-width: 1180px)');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const body   = document.body;
+
+  const T_BAR_OUT  = 180;   // 横条淡出
+  const T_DOCK_IN  = 520;   // 坞滑入（动画 500ms，多留 20ms 收尾）
+  const T_DOCK_OUT = 250;   // 坞淡出
+  const T_BAR_IN   = 430;   // 横条滑入
+
+  /* phase: bar | docking | docked | undocking
+     两个相位进行中被反向滚动打断时，撤销过渡直接落到目标形态，
+     不重播整段动画，因此不会出现"闪一下再演一遍"。 */
+  let phase = 'bar';
+  let timer = 0;
+  let ticking = false;
+
+  function clearPhases(){ body.classList.remove('bar-leaving','docking','undocking','bar-return'); }
+  function stopTimer(){ clearTimeout(timer); timer = 0; }
+
+  function toDock(){
+    stopTimer();
+    body.classList.remove('bar-return','undocking','bar-leaving');
+    body.classList.add('docked');
+    phase = 'docking';
+    // 强制回流，保证 dockIn 从 0 播起（docked 刚建立 fixed 布局）
+    void document.querySelector('.toolbar-inner').offsetWidth;
+    body.classList.add('docking');
+    timer = setTimeout(() => {
+      body.classList.remove('docking');
+      phase = 'docked';
+    }, T_DOCK_IN);
+  }
+
+  function toBar(){
+    stopTimer();
+    body.classList.remove('bar-leaving','docking','bar-return');
+    body.classList.add('bar-return');
+    phase = 'bar';
+    timer = setTimeout(() => body.classList.remove('bar-return'), T_BAR_IN);
+  }
+
+  function apply(){
+    ticking = false;
+    const want = mq.matches
+              && body.classList.contains('hero-collapsed')
+              && window.scrollY > 120;
+
+    // 降级：不做两段式，直接切换形态
+    if (reduce.matches){
+      stopTimer(); clearPhases();
+      body.classList.toggle('docked', want);
+      phase = want ? 'docked' : 'bar';
+      return;
+    }
+
+    if (want){
+      if (phase === 'bar'){
+        // 横条原位淡出 → 坞从右侧滑入
+        phase = 'docking';
+        body.classList.add('bar-leaving');
+        timer = setTimeout(toDock, T_BAR_OUT);
+      } else if (phase === 'undocking'){
+        // 出坞途中又往下滚：撤销坞的淡出，回到坞的常态
+        stopTimer();
+        body.classList.remove('undocking','bar-return');
+        phase = 'docked';
+      }
+      // docking / docked：保持现状
+    } else {
+      if (phase === 'docked'){
+        // 坞原位淡出 → 横条从上方滑回
+        phase = 'undocking';
+        body.classList.add('undocking');
+        timer = setTimeout(() => {
+          body.classList.remove('undocking','docked');
+          toBar();
+        }, T_DOCK_OUT);
+      } else if (phase === 'docking'){
+        // 入坞途中又回到封面：撤销坞，横条滑回
+        stopTimer();
+        body.classList.remove('docking','bar-leaving');
+        body.classList.remove('docked');
+        toBar();
+      }
+    }
+  }
+  function queue(){
+    if (!ticking){ ticking = true; requestAnimationFrame(apply); }
+  }
+
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+  mq.addEventListener('change', queue);
+  apply();
 })();
 </script>
 </body>
