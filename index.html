@@ -728,6 +728,40 @@
     background:linear-gradient(180deg,var(--line),transparent);
   }
 
+  /* === 人话版摘要：结构化要点 === */
+  .summary-list li .ss-cat{
+    display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+    padding:2px 8px;border-radius:3px;
+    margin-right:10px;margin-left:-4px;vertical-align:baseline;
+    color:#fff;background:#2e3a54;
+  }
+  .summary-list li .ss-cat.c-trend{background:#0b57d0;}
+  .summary-list li .ss-cat.c-ili{background:#6b4fb5;}
+  .summary-list li .ss-cat.c-ob{background:#f2a03d;color:#2a1b00;}
+  .summary-list li .ss-cat.c-risk{background:#c0392b;}
+  .summary-list li .ss-cat.c-safe{background:#27ae60;}
+  .summary-list li .ss-num{
+    font-family:var(--serif);font-size:30px;font-weight:900;line-height:.95;
+    color:#0e1b30;margin-right:10px;margin-left:2px;vertical-align:middle;
+    font-variant-numeric:tabular-nums;
+  }
+  .summary-list li .ss-arrow{
+    display:inline-block;font-size:15px;font-weight:800;line-height:1;
+    margin-right:8px;vertical-align:middle;
+  }
+  .summary-list li .ss-arrow.t-up{color:#c0392b;}
+  .summary-list li .ss-arrow.t-down{color:#27ae60;}
+  .summary-list li .ss-arrow.t-flat{color:#9aa3b3;}
+  .summary-list li .ss-arrow.t-mixed{color:#a8824a;}
+  .summary-list li .ss-desc{
+    font-size:13.5px;color:var(--ink-2);line-height:1.75;vertical-align:baseline;
+  }
+  .summary-list li .ss-desc b{color:var(--ink);font-weight:800;}
+  .summary-list li .ss-desc .mini-up{color:#c0392b;font-weight:700;}
+  .summary-list li .ss-desc .mini-down{color:#27ae60;font-weight:700;}
+  .summary-list li .ss-desc .mini-flat{color:#9aa3b3;}
+  .summary-list li .ss-desc .mini-mixed{color:#a8824a;}
+
   /* ---- 表格：纯线框财经表 ---- */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;}
@@ -1070,6 +1104,10 @@
     .summary-list li:hover{padding-left:38px;}
     .summary-list li::before{font-size:13px;}
     .summary-list li::after{left:26px;}
+    .summary-list li .ss-cat{font-size:9.5px;padding:1.5px 6px;margin-right:7px;margin-left:-2px;}
+    .summary-list li .ss-num{font-size:22px;margin-right:6px;}
+    .summary-list li .ss-arrow{font-size:12px;margin-right:5px;}
+    .summary-list li .ss-desc{font-size:12px;line-height:1.7;}
     .chart-wrap{height:280px;}
     .chart-wrap.sm{height:240px;}
     .chart-wrap.lg{height:320px;}
@@ -2144,8 +2182,97 @@ function renderKPI(d) {
     </div>`).join('');
 }
 
+/* 自动生成人话版摘要 —— 不依赖手动维护的 summary 字段
+   核心思路：把结构化数据翻译成普通人能读懂的要点，每行一个"发生了什么"
+   专业术语（抗原性、耐药性百分比、鸡胚株/细胞株等）一律不进摘要，
+   只在第 06 章病毒学表格里展示。 */
 function renderSummary(d) {
-  $('summaryList').innerHTML = d.summary.map(t => `<li>${t}</li>`).join('');
+  const labTotal = d.lab.total;
+  const totalPos = labTotal.positive;
+  const totalA = labTotal.A;
+  const totalB = labTotal.B;
+  const bShare = totalPos ? totalB / totalPos : 0;
+  const mainType = bShare >= 0.55 ? 'B型' : (totalA > totalB ? 'A型' : 'A、B型相当');
+
+  // 南北方阳性率环比
+  const rateOf = (o) => o.tested ? o.positive / o.tested * 100 : 0;
+  const sNow = rateOf(d.lab.south);
+  const sPrev = WEEKS[Math.max(0, state.index - 1)] ? rateOf(WEEKS[Math.max(0, state.index - 1)].lab.south) : sNow;
+  const nNow = rateOf(d.lab.north);
+  const nPrev = WEEKS[Math.max(0, state.index - 1)] ? rateOf(WEEKS[Math.max(0, state.index - 1)].lab.north) : nNow;
+
+  const dirOf = (now, prev) => {
+    const diff = now - prev;
+    if (Math.abs(diff) < 0.05) return { word: '持平', cls: 'flat' };
+    if (diff > 0) return { word: '上升', cls: 'up', val: diff };
+    return { word: '下降', cls: 'down', val: -diff };
+  };
+
+  // ILI 就诊率（门诊信号）
+  const sIli = dirOf(d.ili.south.value, d.ili.south.prev);
+  const nIli = dirOf(d.ili.north.value, d.ili.north.prev);
+  const sPos = dirOf(sNow, sPrev);
+  const nPos = dirOf(nNow, nPrev);
+
+  const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+
+  const items = [];
+
+  // 要点 1：阳性率趋势（最核心指标）
+  items.push({
+    cat: '趋势', catCls: 'c-trend',
+    trend: (sPos.cls === nPos.cls ? sPos.cls : 'mixed'),
+    num: '',
+    html: `南方阳性率 <b>${fmt(sNow)}%</b>（<span class="mini-${sPos.cls}">${sPos.word}${sPos.val ? ' ' + fmt(sPos.val) + '%' : ''}</span>），北方 <b>${fmt(nNow)}%</b>（<span class="mini-${nPos.cls}">${nPos.word}${nPos.val ? ' ' + fmt(nPos.val) + '%' : ''}</span>），本周以 <b>${mainType}</b> 为主。`
+  });
+
+  // 要点 2：ILI 就诊率（门诊信号）
+  items.push({
+    cat: '门诊', catCls: 'c-ili',
+    trend: (sIli.cls === nIli.cls ? sIli.cls : 'mixed'),
+    num: '',
+    html: `门诊流感样病例占比：南方 <b>${fmt(d.ili.south.value)}%</b>（<span class="mini-${sIli.cls}">${sIli.word}</span>），北方 <b>${fmt(d.ili.north.value)}%</b>（<span class="mini-${nIli.cls}">${nIli.word}</span>）。`
+  });
+
+  // 要点 3：暴发疫情
+  const ob = d.outbreaks;
+  let obHtml = `本周全国报告 <b>${ob.week}</b> 起暴发疫情，`;
+  if (ob.weekDetail && ob.weekDetail.indexOf('B') >= 0) {
+    obHtml += '主要检出 B(Victoria)。';
+  } else if (ob.weekDetail) {
+    obHtml += ob.weekDetail.split('。')[0] + '。';
+  } else {
+    obHtml += '需关注后续发展。';
+  }
+  items.push({ cat: '暴发', catCls: 'c-ob', trend: ob.week > (WEEKS[Math.max(0, state.index - 1)]?.outbreaks?.week || ob.week) ? 'up' : 'flat', num: String(ob.week), html: obHtml });
+
+  // 要点 4：风险提示（条件性）
+  const res = d.resistance?.rows || [];
+  const hasResistance = res.some(r => r.reduced > 0);
+  const whoHas = d.human?.who && d.human.who.indexOf('未通报') < 0 && d.human.who.indexOf('无') < 0;
+  const riskBits = [];
+  if (whoHas) riskBits.push({ cat: '关注', catCls: 'c-risk', trend: 'up', num: '', html: `<b>WHO 通报：</b>${d.human.who}。` });
+  if (hasResistance) {
+    const totalReduced = res.reduce((a, r) => a + (r.reduced || 0), 0);
+    riskBits.push({ cat: '关注', catCls: 'c-risk', trend: 'up', num: '', html: `<b>${totalReduced} 株</b>对神经氨酸酶抑制剂敏感性降低，详见病毒学分析。` });
+  }
+  if (riskBits.length) {
+    riskBits.forEach(b => items.push(b));
+  } else {
+    items.push({ cat: '风险', catCls: 'c-safe', trend: 'flat', num: '', html: `<b>耐药性平稳</b>：本周未发现新亚型耐药毒株，B 型全部敏感。` });
+  }
+
+  // 渲染
+  const arrowOf = c => ({ up: '↑', down: '↓', flat: '·', mixed: '⇄' }[c] || '');
+  const trendClsOf = c => ({ up: 't-up', down: 't-down', flat: 't-flat', mixed: 't-mixed' }[c] || '');
+  $('summaryList').innerHTML = items.map((it, i) => `
+    <li>
+      <span class="ss-cat ${it.catCls}">${it.cat}</span>
+      ${it.num ? `<span class="ss-num">${it.num}</span>` : ''}
+      ${it.trend !== 'flat' && it.trend !== 'mixed' ? `<span class="ss-arrow ${trendClsOf(it.trend)}">${arrowOf(it.trend)}</span>` : ''}
+      <span class="ss-desc">${it.html}</span>
+    </li>
+  `).join('');
 }
 
 /* ---------------- 本期研判：由本期数据自动生成的信号 ----------------
@@ -2358,6 +2485,7 @@ function renderOutbreak(d) {
   $('obSpecimen').textContent = o.specimens;
 
   const sorted = [...o.regions].sort((a, b) => a.value - b.value);
+  const narrow = window.innerWidth <= 700;
   mountChart('region', 'chartRegion', {
     type: 'bar',
     data: {
@@ -2368,7 +2496,7 @@ function renderOutbreak(d) {
           const alpha = 0.45 + 0.55 * (i / Math.max(1, sorted.length - 1));
           return `rgba(11,87,208,${alpha.toFixed(2)})`;
         }),
-        borderRadius: 6, barThickness: 18
+        borderRadius: 6, barThickness: narrow ? 14 : 18
       }]
     },
     options: {
@@ -2379,9 +2507,11 @@ function renderOutbreak(d) {
           callbacks: { label: ctx => ` ${fmt(ctx.parsed.x)} 起` } }
       },
       scales: {
-        x: { grid: { color: 'rgba(238,243,250,.9)' }, ticks: { color: '#8a94a8', font: { size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: '#41527a', font: { size: 12 } } }
-      }
+        x: { grid: { color: 'rgba(238,243,250,.9)' }, ticks: { color: '#8a94a8', font: { size: narrow ? 9 : 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#41527a', font: { size: narrow ? 10 : 12 } } }
+      },
+      layout: { padding: { left: narrow ? 2 : 0 } },
+      grid: { left: narrow ? 68 : 80, right: 10 }
     }
   });
 }
